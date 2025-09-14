@@ -14,37 +14,49 @@ It provides a centralized platform where team members can update their daily met
 
 ---
 
-### 🛠️ Tech Stack
-<div align="center">
-  
-**Frontend:** 
-    React 19 - UI Library
-    Vite 7 - Dev Server / Bundler
-    React Router DOM 7 - Client Side Routing
-    Axios - HTTP Client for API Calls
-    Recharts 3 - Data Visualization 
-    JSX + ES Modules - Modern Frontend Syntax
-    
-**Backend:** 
-    Node.js - Runtime Environment
-    Express 5 - Web Framework / HTTP Server
-    CORS - Cross-origin Resource Handling
-    JSON Web Tokens - Stateless Authentication
-    bcryptjs - Password Hashing
-    Mongoose - ODM for MongoDB
-    Nodemailer - email sending capability
-    Dotenv - Environment Variable Management
-    Modular Architecture - Routes, Models, Services, Utils
-    
-**Database:** 
-    MongoDB - Primary Database
-    
-**Integration:** 
-    Google Sheets API - for Reading and Appending Spreadsheet data
-    ExcelUS(excel.js) - for Generating / Reading excel files locally
-    Nodemailer 
-    
-</div>
+<h3>🛠️ Tech Stack</h3>
+
+<ol>
+  <li><b>🎨 Frontend</b>
+    <ul>
+      <li>⚛️ React 19 – UI Library</li>
+      <li>⚡ Vite 7 – Dev Server / Bundler</li>
+      <li>🛣️ React Router DOM 7 – Client Side Routing</li>
+      <li>🌐 Axios – HTTP Client for API Calls</li>
+      <li>📊 Recharts 3 – Data Visualization</li>
+      <li>✨ JSX + ES Modules – Modern Frontend Syntax</li>
+    </ul>
+  </li>
+
+  <li><b>🖥️ Backend</b>
+    <ul>
+      <li>🟢 Node.js – Runtime Environment</li>
+      <li>🚏 Express 5 – Web Framework / HTTP Server</li>
+      <li>🔗 CORS – Cross-origin Resource Handling</li>
+      <li>🔐 JSON Web Tokens – Stateless Authentication</li>
+      <li>🔑 bcryptjs – Password Hashing</li>
+      <li>🗄️ Mongoose – ODM for MongoDB</li>
+      <li>📧 Nodemailer – Email Sending Capability</li>
+      <li>⚙️ Dotenv – Environment Variable Management</li>
+      <li>🧩 Modular Architecture – Routes, Models, Services, Utils</li>
+    </ul>
+  </li>
+
+  <li><b>🗃️ Database</b>
+    <ul>
+      <li>🍃 MongoDB – Primary Database</li>
+    </ul>
+  </li>
+
+  <li><b>🔌 Integration</b>
+    <ul>
+      <li>📑 Google Sheets API – For Reading and Appending Spreadsheet Data</li>
+      <li>📂 ExcelJS (excel.js) – For Generating / Reading Excel Files Locally</li>
+      <li>📧 Nodemailer</li>
+    </ul>
+  </li>
+</ol>
+
 
 ---
 
