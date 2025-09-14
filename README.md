@@ -1,12 +1,12 @@
-<h1 align="center">📊 Final Year Project - Metrics & Performance Dashboard 🚀</h1>
-<h3 align="center">Smart Team Metrics Management | Google Sheets + React + Spring Boot</h3>
-<h4 align="center">Vel Tech High Tech College</h4>
+<h1 align="center">📊Automated Accountability System for Daily Metrics Submission with Realtime PM Alerts🚀</h1>
+<h3 align="center">Smart Team Metrics Management with Automated Alert System | Google Sheets + React + Spring Boot</h3>
+<h4 align="center">Vel Tech High Tech Dr.Rangarajan Dr.Sakunthala Engineering College College</h4>
 
 ---
 
 ### 🌟 Project Overview
-This project is built to **simplify team performance tracking** for project managers and employees.  
-It combines **Google Sheets Integration**, **Dynamic Performance Dashboards**, and **Role-based Access** for effective monitoring.
+The **Daily Metrics Tracking and Alert System** is a full stack web application designed for **IT support teams** to streamline performance monitoring.
+It provides a centralized platform where team members can update their daily metrics, ensuring accuracy and transparency in reporting.
 
 ✅ **Team Members** → Update their metrics in assigned Google Sheets  
 ✅ **Project Managers** → View consolidated reports and dashboards  
@@ -34,13 +34,6 @@ It combines **Google Sheets Integration**, **Dynamic Performance Dashboards**, a
 - ⏰ **Deadline Reminders** – Alerts for late submissions  
 - 📥 **Excel/Sheets Export** – Download reports anytime  
 - 🔄 **Dynamic Updates** – Dashboards auto-refresh with sheet data  
-
----
-
-### 📊 Sample Dashboard (Team Member View)
-<div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Performance+Dashboard+Preview" alt="Dashboard Preview" />
-</div>
 
 ---
 
