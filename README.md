@@ -17,12 +17,33 @@ It provides a centralized platform where team members can update their daily met
 ### 🛠️ Tech Stack
 <div align="center">
   
-**Frontend:** React.js, Recharts, Vite ⚡  
-**Backend:** Spring Boot, REST APIs  
-**Database:** MySQL (User Auth & Roles)  
-**Integration:** Google Sheets API  
-**Other Tools:** Node.js, Axios, JWT Authentication  
-
+**Frontend:** 
+    React 19 - UI Library
+    Vite 7 - Dev Server / Bundler
+    React Router DOM 7 - Client Side Routing
+    Axios - HTTP Client for API Calls
+    Recharts 3 - Data Visualization 
+    JSX + ES Modules - Modern Frontend Syntax
+    
+**Backend:** 
+    Node.js - Runtime Environment
+    Express 5 - Web Framework / HTTP Server
+    CORS - Cross-origin Resource Handling
+    JSON Web Tokens - Stateless Authentication
+    bcryptjs - Password Hashing
+    Mongoose - ODM for MongoDB
+    Nodemailer - email sending capability
+    Dotenv - Environment Variable Management
+    Modular Architecture - Routes, Models, Services, Utils
+    
+**Database:** 
+    MongoDB - Primary Database
+    
+**Integration:** 
+    Google Sheets API - for Reading and Appending Spreadsheet data
+    ExcelUS(excel.js) - for Generating / Reading excel files locally
+    Nodemailer 
+    
 </div>
 
 ---
