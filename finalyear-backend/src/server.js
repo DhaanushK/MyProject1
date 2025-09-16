@@ -9,7 +9,11 @@ connectDB();
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
+  origin: [
+    'http://localhost:5173', // Development
+    'https://dhaanushk.github.io', // GitHub Pages domain
+    'https://dhaanushk.github.io/MyProject1' // GitHub Pages full URL
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
