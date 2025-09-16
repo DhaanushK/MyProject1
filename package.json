@@ -1,0 +1,11 @@
+{
+  "name": "myproject1",
+  "version": "1.0.0",
+  "description": "Final Year Project - Team Performance Analytics",
+  "scripts": {
+    "build": "cd finalyear-frontend && npm install && npm run build && cd .. && xcopy finalyear-frontend\\dist\\* . /E /Y",
+    "install": "cd finalyear-frontend && npm install"
+  },
+  "author": "DhaanushK",
+  "license": "ISC"
+}
