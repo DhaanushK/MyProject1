@@ -1,16 +1,15 @@
 import { google } from "googleapis";
-import path from "path";
-import { fileURLToPath } from "url";
+import { getGoogleAuth } from './googleAuth.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let sheets = null;
 
-const auth = new google.auth.GoogleAuth({
-  keyFile: path.join(__dirname, "../../credentials.json"),
-  scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-});
-
-const sheets = google.sheets({ version: "v4", auth });
+async function getSheets() {
+  if (!sheets) {
+    const auth = await getGoogleAuth();
+    sheets = google.sheets({ version: "v4", auth });
+  }
+  return sheets;
+}
 
 export async function getAllTeamMetricsData(sheetId) {
   try {
@@ -21,6 +20,8 @@ export async function getAllTeamMetricsData(sheetId) {
     if (!sheetId) {
       throw new Error('Spreadsheet ID is required');
     }
+
+    const sheets = await getSheets();
 
     // Get all sheets in the spreadsheet
     const spreadsheet = await sheets.spreadsheets.get({
@@ -51,7 +52,8 @@ export async function getAllTeamMetricsData(sheetId) {
     for (const userSheet of allUserSheets) {
       try {
         console.log(`Fetching data from sheet: ${userSheet.properties.title}`);
-        const res = await sheets.spreadsheets.values.get({
+        const sheetsApi = await getSheets();
+        const res = await sheetsApi.spreadsheets.values.get({
           spreadsheetId: sheetId,
           range: `${userSheet.properties.title}!A2:I`,
         });
@@ -121,6 +123,8 @@ export async function getUserMetricsData(sheetId, userName) {
       throw new Error('User name is required');
     }
 
+    const sheets = await getSheets();
+
     // First get all sheets in the spreadsheet
     console.log('Attempting to access spreadsheet with ID:', sheetId);
     
@@ -183,7 +187,8 @@ export async function getUserMetricsData(sheetId, userName) {
     
     console.log(`Found sheet: ${userSheet.properties.title} for user: ${userName}`);
 
-    const res = await sheets.spreadsheets.values.get({
+    const sheetsApi = await getSheets();
+    const res = await sheetsApi.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: `${userSheet.properties.title}!A2:I`,
     });
