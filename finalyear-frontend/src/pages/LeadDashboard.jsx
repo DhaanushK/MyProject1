@@ -1,12 +1,10 @@
-import UserInfo from "../components/UserInfo";
 import TopBar from "../components/TopBar";
 
 export default function LeadDashboard() {
   return (
-    <div>
-      <TopBar title="Team Lead Dashboard">
-        <UserInfo />
-      </TopBar>
+    <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <TopBar title="Team Lead Dashboard" />
+      {/* Add your dashboard content here */}
     </div>
   );
 }

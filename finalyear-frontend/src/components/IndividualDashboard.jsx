@@ -127,66 +127,7 @@ export default function IndividualDashboard() {
         </div>
       </div>
 
-      {/* Performance Analysis Link Section */}
-      <div 
-        style={{ 
-          marginTop: "40px",
-          background: "white",
-          borderRadius: "10px",
-          padding: "20px",
-          cursor: "pointer",
-          transition: "transform 0.2s, box-shadow 0.2s",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-        }}
-        onClick={() => navigate('performance')}
-        onMouseOver={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-        }}
-      >
-        <h2 style={{ marginBottom: "15px", color: "#333" }}>Performance Analysis</h2>
-        <p style={{ color: "#666", marginBottom: "20px" }}>
-          Click to view detailed performance analytics and visualizations in a new tab
-        </p>
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "20px",
-          marginTop: "15px"
-        }}>
-          <div style={{ 
-            background: "#f8f9fa",
-            borderRadius: "5px",
-            padding: "15px",
-            textAlign: "center"
-          }}>
-            <h4 style={{ margin: "0 0 10px 0", color: "#444" }}>Daily Performance</h4>
-            <p style={{ color: "#666", margin: 0 }}>View daily workload and SLA trends</p>
-          </div>
-          <div style={{ 
-            background: "#f8f9fa",
-            borderRadius: "5px",
-            padding: "15px",
-            textAlign: "center"
-          }}>
-            <h4 style={{ margin: "0 0 10px 0", color: "#444" }}>Weekly Analysis</h4>
-            <p style={{ color: "#666", margin: 0 }}>Track weekly performance metrics</p>
-          </div>
-          <div style={{ 
-            background: "#f8f9fa",
-            borderRadius: "5px",
-            padding: "15px",
-            textAlign: "center"
-          }}>
-            <h4 style={{ margin: "0 0 10px 0", color: "#444" }}>Performance Profile</h4>
-            <p style={{ color: "#666", margin: 0 }}>Analyze overall efficiency metrics</p>
-          </div>
-        </div>
-      </div>
+      {/* Removed old Performance Analysis Link Section */}
 
       {/* Metrics Data Table with Pagination */}
       <div style={{ marginTop: "30px" }}>

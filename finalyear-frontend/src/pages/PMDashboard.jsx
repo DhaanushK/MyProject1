@@ -1,4 +1,3 @@
-import UserInfo from "../components/UserInfo";
 import TeamMemberTabs from "../components/TeamMemberTabs.jsx";
 import TopBar from "../components/TopBar";
 
@@ -32,44 +31,67 @@ export default function PMDashboard() {
   };
 
   return (
-    <div>
-      <TopBar title="Project Manager Dashboard">
-        <UserInfo />
-      </TopBar>
-      
-      {/* Team Member Performance Analysis */}
-      <TeamMemberTabs />
-      
-      <div style={{ marginTop: "40px", padding: "20px", backgroundColor: "#f9f9f9", borderRadius: "8px" }}>
-        <h3>📄 Raw Data Access</h3>
-        <p>Download or view the complete Google Sheets data:</p>
-        
-        {/* Button for Google Sheet download */}
-        <button 
-          onClick={handleDownload}
+    <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <TopBar title="Project Manager Dashboard" />
+
+      <div style={{ padding: "20px" }}>
+        {/* Team Member Performance Analysis */}
+        <TeamMemberTabs />
+
+        <div
           style={{
-            padding: "10px 20px",
-            backgroundColor: "#4caf50",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            marginBottom: "20px"
+            marginTop: "40px",
+            padding: "20px",
+            backgroundColor: "#fff",
+            borderRadius: "8px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
-          📥 Download Google Sheet (Excel)
-        </button>
+          <h3>📄 Raw Data Access</h3>
+          <p>Download or view the complete Google Sheets data:</p>
 
-        {/* Embedded Google Sheet */}
-        <iframe
-          src="https://docs.google.com/spreadsheets/d/1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80/edit?usp=sharing"
-          width="100%"
-          height="600px"
-          style={{ border: "1px solid #ccc", borderRadius: "8px" }}
-          title="Metrics Sheet"
-        ></iframe>
+          {/* Button for Google Sheet download */}
+          <button
+            onClick={handleDownload}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#4caf50",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              marginBottom: "20px",
+              boxShadow: "0 2px 4px rgba(76,175,80,0.2)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#43a047";
+              e.currentTarget.style.boxShadow =
+                "0 4px 8px rgba(76,175,80,0.3)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#4caf50";
+              e.currentTarget.style.boxShadow =
+                "0 2px 4px rgba(76,175,80,0.2)";
+            }}
+          >
+            📥 Download Google Sheet (Excel)
+          </button>
+
+          {/* Embedded Google Sheet */}
+          <iframe
+            src="https://docs.google.com/spreadsheets/d/1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80/edit?usp=sharing"
+            width="100%"
+            height="600px"
+            style={{
+              border: "1px solid #eee",
+              borderRadius: "8px",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.05)",
+            }}
+            title="Metrics Sheet"
+          />
+        </div>
       </div>
-
     </div>
   );
 }
