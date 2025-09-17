@@ -6,10 +6,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Authenticate with service account JSON
-const auth = new google.auth.GoogleAuth({
-  keyFile: path.join(__dirname, "../config/credentials.json"), // <-- place your service account JSON here
-  scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-});
+let auth;
+
+if (process.env.GOOGLE_SHEETS_CREDENTIALS) {
+  // Production: Use environment variable
+  const credentials = JSON.parse(process.env.GOOGLE_SHEETS_CREDENTIALS);
+  auth = new google.auth.GoogleAuth({
+    credentials: credentials,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+  });
+} else {
+  // Development: Use local file
+  auth = new google.auth.GoogleAuth({
+    keyFile: path.join(__dirname, "../config/credentials.json"),
+    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+  });
+}
 
 const sheets = google.sheets({ version: "v4", auth });
 
@@ -17,25 +29,30 @@ const sheets = google.sheets({ version: "v4", auth });
 const SHEET_ID = "1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80";
 
 export async function getMetricsData() {
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: "Sheet1!A2:I", // A=Date → I=Notes
-  });
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "A2:I", // A=Date → I=Notes, without sheet name to be more flexible
+    });
 
-  const rows = res.data.values || [];
+    const rows = res.data.values || [];
 
-  return rows.map(
-    ([date, name, email, totalTasks, completed, pending, late, hours, notes]) => ({
-      date,
-      name,
-      email,
-      totalTasks: parseInt(totalTasks, 10) || 0,
-      completed: parseInt(completed, 10) || 0,
-      pending: parseInt(pending, 10) || 0,
-      late: parseInt(late, 10) || 0,
-      hours: parseInt(hours, 10) || 0,
-      notes: notes || "",
-    })
-  );
+    return rows.map(
+      ([date, name, email, totalTasks, completed, pending, late, hours, notes]) => ({
+        date,
+        name,
+        email,
+        totalTasks: parseInt(totalTasks, 10) || 0,
+        completed: parseInt(completed, 10) || 0,
+        pending: parseInt(pending, 10) || 0,
+        late: parseInt(late, 10) || 0,
+        hours: parseInt(hours, 10) || 0,
+        notes: notes || "",
+      })
+    );
+  } catch (error) {
+    console.error('Google Sheets API error:', error.message);
+    throw new Error(`Google Sheets connection failed: ${error.message}`);
+  }
 }
 
