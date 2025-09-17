@@ -1,5 +1,7 @@
 import UserInfo from "../components/UserInfo";
 import TeamMemberTabs from "../components/TeamMemberTabs.jsx";
+import TopBar from "../components/TopBar";
+
 export default function PMDashboard() {
   const handleDownload = () => {
     const sheetId = "1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80"; // Replace with your Google Sheet ID
@@ -31,8 +33,9 @@ export default function PMDashboard() {
 
   return (
     <div>
-      <UserInfo />
-      <h1>Project Manager Dashboard</h1>
+      <TopBar title="Project Manager Dashboard">
+        <UserInfo />
+      </TopBar>
       
       {/* Team Member Performance Analysis */}
       <TeamMemberTabs />
@@ -66,6 +69,7 @@ export default function PMDashboard() {
           title="Metrics Sheet"
         ></iframe>
       </div>
+
     </div>
   );
 }

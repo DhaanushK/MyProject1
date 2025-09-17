@@ -27,23 +27,12 @@ function App() {
 
   const DashboardComponent = getDashboardComponent();
 
-  // Logout functionality
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("username");
-    navigate("/login");
-  };
-
   return (
     <div>
       <nav style={{ 
         padding: '1rem', 
         backgroundColor: '#f8f9fa',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <ul style={{ 
           listStyle: 'none', 
@@ -70,29 +59,6 @@ function App() {
             </li>
           )}
         </ul>
-        
-        {/* Logout Button */}
-        <button 
-          onClick={handleLogout}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: '500',
-            fontSize: '14px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.backgroundColor = '#c82333';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.backgroundColor = '#dc3545';
-          }}
-        >
-          Logout
-        </button>
       </nav>
 
       <Routes>

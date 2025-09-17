@@ -9,7 +9,7 @@ export default function IndividualDashboard() {
   const [error, setError] = useState(null);
   const [userName, setUserName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const itemsPerPage = 10; // Show 10 dates per page
 
   const COLORS = ["#00C49F", "#FF8042"];
 
@@ -82,47 +82,6 @@ export default function IndividualDashboard() {
     { name: "Completed", value: metricsData.completedTasks },
     { name: "Pending", value: metricsData.pendingTasks }
   ];
-
-  // Pagination logic
-  const totalPages = Math.ceil(metrics.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentMetrics = metrics.slice(startIndex, endIndex);
-
-  const goToPage = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-    
-    return pageNumbers;
-  };
 
   // Prepare weekly data
   const weeklyData = metrics.reduce((acc, metric) => {
@@ -231,13 +190,7 @@ export default function IndividualDashboard() {
 
       {/* Metrics Data Table with Pagination */}
       <div style={{ marginTop: "30px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-          <h3>Metrics Data</h3>
-          <div style={{ fontSize: "14px", color: "#666" }}>
-            Showing {startIndex + 1} to {Math.min(endIndex, metrics.length)} of {metrics.length} entries
-          </div>
-        </div>
-        
+        <h3>Metrics Data</h3>
         {metrics.length > 0 ? (
           <>
             <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
@@ -252,83 +205,48 @@ export default function IndividualDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {currentMetrics.map((metric, index) => (
-                  <tr key={index}>
-                    <td style={tableCellStyle}>{metric.date}</td>
-                    <td style={tableCellStyle}>{metric.totalTasks}</td>
-                    <td style={tableCellStyle}>{metric.completed}</td>
-                    <td style={tableCellStyle}>{metric.pending}</td>
-                    <td style={tableCellStyle}>{metric.late}</td>
-                    <td style={tableCellStyle}>{metric.notes}</td>
-                  </tr>
-                ))}
+                {metrics
+                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                  .map((metric, index) => (
+                    <tr key={index}>
+                      <td style={tableCellStyle}>{metric.date}</td>
+                      <td style={tableCellStyle}>{metric.totalTasks}</td>
+                      <td style={tableCellStyle}>{metric.completed}</td>
+                      <td style={tableCellStyle}>{metric.pending}</td>
+                      <td style={tableCellStyle}>{metric.late}</td>
+                      <td style={tableCellStyle}>{metric.notes}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
-
             {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "center", 
-                alignItems: "center", 
-                marginTop: "20px",
-                gap: "10px"
-              }}>
-                {/* Previous Button */}
-                <button
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 1}
-                  style={{
-                    padding: "8px 12px",
-                    border: "1px solid #ddd",
-                    backgroundColor: currentPage === 1 ? "#f5f5f5" : "#fff",
-                    color: currentPage === 1 ? "#999" : "#333",
-                    borderRadius: "4px",
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                    fontSize: "14px"
-                  }}
-                >
-                  Previous
-                </button>
-
-                {/* Page Numbers */}
-                {getPageNumbers().map(pageNumber => (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '10px', 
+              marginTop: '20px',
+              alignItems: 'center'
+            }}>
+              {Array.from({ length: Math.ceil(metrics.length / itemsPerPage) }, (_, i) => i + 1)
+                .map(pageNum => (
                   <button
-                    key={pageNumber}
-                    onClick={() => goToPage(pageNumber)}
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
                     style={{
-                      padding: "8px 12px",
-                      border: "1px solid #ddd",
-                      backgroundColor: currentPage === pageNumber ? "#007bff" : "#fff",
-                      color: currentPage === pageNumber ? "#fff" : "#333",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: currentPage === pageNumber ? "bold" : "normal"
+                      padding: '8px 12px',
+                      border: currentPage === pageNum ? '2px solid #007bff' : '1px solid #ddd',
+                      borderRadius: '4px',
+                      background: currentPage === pageNum ? '#007bff' : 'white',
+                      color: currentPage === pageNum ? 'white' : '#333',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      minWidth: '40px'
                     }}
                   >
-                    {pageNumber}
+                    {pageNum}
                   </button>
                 ))}
-
-                {/* Next Button */}
-                <button
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                  style={{
-                    padding: "8px 12px",
-                    border: "1px solid #ddd",
-                    backgroundColor: currentPage === totalPages ? "#f5f5f5" : "#fff",
-                    color: currentPage === totalPages ? "#999" : "#333",
-                    borderRadius: "4px",
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                    fontSize: "14px"
-                  }}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            </div>
           </>
         ) : (
           <p>No metrics data available</p>

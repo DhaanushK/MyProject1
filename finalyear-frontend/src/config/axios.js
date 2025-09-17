@@ -1,12 +1,8 @@
 import axios from 'axios';
 
-// Use environment variable for API URL, fallback to localhost for development
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 const instance = axios.create({
-  baseURL: baseURL,
+  baseURL: 'http://localhost:5000',
   timeout: 10000, // 10 seconds timeout
-  withCredentials: true, // Important for CORS
   maxContentLength: 10 * 1024 * 1024, // 10MB max content length
   maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
   headers: {

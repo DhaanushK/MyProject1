@@ -27,7 +27,15 @@ function Login() {
       else if (role === "team_lead") navigate("/lead");
       else if (role === "project_manager") navigate("/pm");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Network error. Please check if the server is running.";
+      console.error('Login error:', err);
+      let errorMessage;
+      if (!err.response) {
+        errorMessage = "Network error. Please check if the server is running.";
+      } else if (err.response.status === 400) {
+        errorMessage = "Invalid email or password.";
+      } else {
+        errorMessage = err.response.data.message || "An unknown error occurred.";
+      }
       alert("Login failed: " + errorMessage);
     }
   };

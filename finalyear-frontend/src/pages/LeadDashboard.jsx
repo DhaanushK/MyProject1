@@ -1,10 +1,12 @@
 import UserInfo from "../components/UserInfo";
+import TopBar from "../components/TopBar";
 
 export default function LeadDashboard() {
   return (
     <div>
-      <UserInfo />
-      <h1>Team Lead Dashboard</h1>
+      <TopBar title="Team Lead Dashboard">
+        <UserInfo />
+      </TopBar>
     </div>
   );
 }
