@@ -1,6 +1,10 @@
 # Environment variables
 .env
-credentials-new.json
+.env.*
+!.env.example
+credentials*.json
+*.key
+*.pem
 
 # Credentials
 **/credentials.json
