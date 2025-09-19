@@ -8,12 +8,19 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// CORS Configuration
 app.use(cors({
-  origin: '*',  // Allow all origins in development
+  origin: 'http://localhost:5173',  // Match your Vite dev server exactly
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);  // ✅ mount route
