@@ -1,22 +1,26 @@
 import { google } from "googleapis";
-
-const auth = new google.auth.GoogleAuth({
-  keyFile: "credentials.json", // downloaded from Google Cloud
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-});
+import { getGoogleAuth } from "../services/googleAuth.js";
 
 // Create and export the sheets instance
 let sheetsInstance = null;
 
 async function getSheets() {
   if (!sheetsInstance) {
-    const client = await auth.getClient();
-    sheetsInstance = google.sheets({ version: "v4", auth: client });
+    const auth = await getGoogleAuth();
+    sheetsInstance = google.sheets({ version: "v4", auth });
   }
   return sheetsInstance;
 }
 
-export const sheets = { spreadsheets: { get: async (params) => (await getSheets()).spreadsheets.get(params) } };
+export const sheets = { 
+  spreadsheets: { 
+    get: async (params) => (await getSheets()).spreadsheets.get(params),
+    values: {
+      get: async (params) => (await getSheets()).spreadsheets.values.get(params),
+      update: async (params) => (await getSheets()).spreadsheets.values.update(params)
+    }
+  } 
+};
 
 export async function appendRow(spreadsheetId, values, sheetName = "Sheet1") {
   const sheetsApi = await getSheets();
