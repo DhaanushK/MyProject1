@@ -7,9 +7,9 @@ async function createTestExcel() {
   // Add headers
   sheet.addRow(["Date", "Name", "Email", "Tickets Assigned"]);
 
-  // Add some sample data
-  sheet.addRow(["2025-09-06", "Alice", "alice@example.com", 10]);
-  sheet.addRow(["2025-09-06", "Bob", "bob@example.com", 12]);
+  // Add some sample data with updated email format
+  sheet.addRow(["2025-09-06", "Alice Johnson", "alice@company.com", 10]);
+  sheet.addRow(["2025-09-06", "Bob Smith", "bob@company.com", 12]);
 
   await workbook.xlsx.writeFile("test-metrics.xlsx");
   console.log("✅ Excel file created!");

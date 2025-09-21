@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from '../config/axios';
 
 export default function MetricsSubmissionForm() {
@@ -35,6 +35,16 @@ export default function MetricsSubmissionForm() {
     isValid: true,
     message: ''
   });
+  const [userRole, setUserRole] = useState('');
+
+  // Get user role on component mount
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    setUserRole(role || '');
+    
+    // Initialize date validation for today
+    validateDate(new Date().toISOString().split('T')[0]);
+  }, []);
 
   // Function to validate date on the frontend
   const validateDate = (selectedDate) => {
@@ -50,12 +60,26 @@ export default function MetricsSubmissionForm() {
     selected.setHours(0, 0, 0, 0);
     
     if (selected.getTime() === today.getTime()) {
+      setDateValidation({ isValid: true, message: '✅ Current day entry allowed' });
       return { isValid: true, message: '✅ Current day entry allowed' };
     } else if (selected.getTime() === yesterday.getTime()) {
-      return { isValid: true, message: '⚠️ Previous day entry (Team Lead permission may be required)' };
+      if (userRole === 'team_lead' || userRole === 'project_manager') {
+        setDateValidation({ isValid: true, message: '✅ Previous day entry allowed for Team Leads' });
+        return { isValid: true, message: '✅ Previous day entry allowed for Team Leads' };
+      } else {
+        setDateValidation({ isValid: true, message: '⚠️ Previous day entry (Team Lead permission may be required)' });
+        return { isValid: true, message: '⚠️ Previous day entry (Team Lead permission may be required)' };
+      }
     } else if (selected.getTime() < yesterday.getTime()) {
-      return { isValid: false, message: '❌ Historical dates are not allowed for editing' };
+      if (userRole === 'team_lead' || userRole === 'project_manager') {
+        setDateValidation({ isValid: true, message: '✅ Historical date allowed for Team Leads' });
+        return { isValid: true, message: '✅ Historical date allowed for Team Leads' };
+      } else {
+        setDateValidation({ isValid: false, message: '❌ Historical dates are not allowed for editing' });
+        return { isValid: false, message: '❌ Historical dates are not allowed for editing' };
+      }
     } else {
+      setDateValidation({ isValid: false, message: '❌ Future dates are not allowed' });
       return { isValid: false, message: '❌ Future dates are not allowed' };
     }
   };
@@ -64,8 +88,7 @@ export default function MetricsSubmissionForm() {
     const { name, value } = e.target;
     
     if (name === 'date') {
-      const validation = validateDate(value);
-      setDateValidation(validation);
+      validateDate(value);
     }
     
     setFormData(prev => ({
@@ -360,8 +383,8 @@ export default function MetricsSubmissionForm() {
         <h4 style={{ margin: '0 0 10px 0' }}>📅 Date Entry Rules:</h4>
         <ul style={{ margin: 0, paddingLeft: '20px' }}>
           <li>✅ <strong>Today:</strong> Always allowed for new entries and updates</li>
-          <li>⚠️ <strong>Yesterday:</strong> Allowed for Team Leads or with special permission</li>
-          <li>❌ <strong>Past dates:</strong> Not allowed to maintain data integrity</li>
+          <li>⚠️ <strong>Yesterday:</strong> {userRole === 'team_lead' || userRole === 'project_manager' ? 'Allowed for Team Leads and Project Managers' : 'Requires Team Lead permission'}</li>
+          <li>❌ <strong>Past dates:</strong> {userRole === 'team_lead' || userRole === 'project_manager' ? 'Allowed for Team Leads and Project Managers' : 'Not allowed to maintain data integrity'}</li>
           <li>❌ <strong>Future dates:</strong> Not allowed</li>
         </ul>
       </div>

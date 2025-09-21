@@ -15,10 +15,49 @@ import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
 
+// APPROVED EMAILS FOR METRICS SUBMISSION
+// Only users with these email addresses can submit metrics to dashboards
+const APPROVED_EMAILS = [
+  'dhaanushk1110@gmail.com',      // Project Manager - unchanged
+  'kanishkka0208@gmail.com',      // Team Member
+  'japraveen1212@gmail.com',      // Team Member  
+  'winnish0703@gmail.com',        // Team Member
+  'reddyvuppu@gmail.com',         // Team Member
+  'jsam01@gmail.com',             // Team Member
+  'kkumar05@gmail.com'            // Team Member
+];
+
+/**
+ * Middleware to validate if user email is approved for metrics submission
+ */
+const validateApprovedEmail = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!APPROVED_EMAILS.includes(user.email)) {
+      return res.status(403).json({ 
+        message: "Access denied: Your email is not approved for metrics submission",
+        userEmail: user.email,
+        approvedEmails: APPROVED_EMAILS
+      });
+    }
+
+    req.user.email = user.email; // Attach email to request for further use
+    next();
+  } catch (error) {
+    console.error('Error validating email:', error);
+    res.status(500).json({ message: "Error validating user email" });
+  }
+};
+
 console.log('Using spreadsheet ID:', process.env.SPREADSHEET_ID);
 router.put(
   "/update",
   authMiddleware,
+  validateApprovedEmail, // NEW: Validate email is approved
   DateValidator.validateDateForEntry,
   async (req, res) => {
     try {
@@ -26,6 +65,8 @@ router.put(
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      console.log(`✅ Metrics update approved for: ${user.email}`);
 
       const {
         date,
@@ -195,10 +236,11 @@ function calculateUserKPIs(data, options = { includeEfficiency: false }) {
   return result;
 }
 
-// Submit metrics route with date validation and logging
+// Submit metrics route with date validation, email validation, and logging
 router.post(
   "/submit",
   authMiddleware,
+  validateApprovedEmail, // NEW: Validate email is approved
   DateValidator.validateDateForTeamLead, // Use team lead validation for flexibility
   async (req, res) => {
     try {
@@ -206,6 +248,8 @@ router.post(
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      console.log(`✅ Metrics submission approved for: ${user.email}`);
 
       const {
         date,
@@ -279,7 +323,8 @@ router.post(
       res.status(201).json({ 
         message: "Metrics submitted to Google Sheet",
         date: submissionDate,
-        userName: user.name
+        userName: user.name,
+        userEmail: user.email
       });
     } catch (err) {
       console.error('Error submitting metrics:', err);
@@ -298,10 +343,11 @@ router.get(
   }
 );
 
-// Get individual user metrics with KPIs
+// Get individual user metrics with KPIs (only for approved emails)
 router.get(
   "/user",
   authMiddleware,
+  validateApprovedEmail, // NEW: Validate email is approved
   async (req, res) => {
     try {
       console.log('User from token:', req.user);
@@ -310,6 +356,8 @@ router.get(
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      console.log(`✅ Metrics dashboard access approved for: ${user.email}`);
 
       // For exact sheet name matching
       const userFullName = user.name; // This should match exactly with the sheet name
@@ -332,7 +380,8 @@ router.get(
         res.json({
           metrics,
           kpis,
-          userName: user.name
+          userName: user.name,
+          userEmail: user.email
         });
       } catch (error) {
         console.error('Error fetching metrics:', error);
