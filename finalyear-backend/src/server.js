@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";  // ✅ import
 import metricsRoutes from "./routes/metricsRoutes.js";
+import logsRoutes from "./routes/logsRoutes.js";
 dotenv.config();
 connectDB();
 
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);  // ✅ mount route
 app.use("/api/metrics", metricsRoutes);
+app.use("/api/logs", logsRoutes);
 app.get("/", (req, res) => {
   res.send("API is running...");
 });

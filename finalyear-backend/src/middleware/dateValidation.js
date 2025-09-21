@@ -5,11 +5,23 @@ import moment from 'moment-timezone';
  */
 class DateValidator {
     /**
+     * Parse date from MM/DD/YYYY format to moment object
+     */
+    static parseDate(dateString) {
+        // Handle both MM/DD/YYYY and YYYY-MM-DD formats for backward compatibility
+        if (dateString.includes('/')) {
+            return moment(dateString, 'MM/DD/YYYY');
+        } else {
+            return moment(dateString, 'YYYY-MM-DD');
+        }
+    }
+
+    /**
      * Check if a date is today (in IST timezone)
      */
     static isToday(date) {
-        const today = moment().tz('Asia/Kolkata').format('YYYY-MM-DD');
-        const inputDate = moment(date).format('YYYY-MM-DD');
+        const today = moment().tz('Asia/Kolkata').format('MM/DD/YYYY');
+        const inputDate = DateValidator.parseDate(date).format('MM/DD/YYYY');
         return today === inputDate;
     }
 
@@ -18,7 +30,7 @@ class DateValidator {
      */
     static isPastDate(date) {
         const today = moment().tz('Asia/Kolkata').startOf('day');
-        const inputDate = moment(date).startOf('day');
+        const inputDate = DateValidator.parseDate(date).startOf('day');
         return inputDate.isBefore(today);
     }
 
@@ -27,23 +39,23 @@ class DateValidator {
      */
     static isFutureDate(date) {
         const today = moment().tz('Asia/Kolkata').startOf('day');
-        const inputDate = moment(date).startOf('day');
+        const inputDate = DateValidator.parseDate(date).startOf('day');
         return inputDate.isAfter(today);
     }
 
     /**
-     * Get current date in IST
+     * Get current date in MM/DD/YYYY format
      */
     static getCurrentDate() {
-        return moment().tz('Asia/Kolkata').format('YYYY-MM-DD');
+        return moment().tz('Asia/Kolkata').format('MM/DD/YYYY');
     }
 
     /**
      * Check if date is yesterday (for team leads)
      */
     static isYesterday(date) {
-        const yesterday = moment().tz('Asia/Kolkata').subtract(1, 'day').format('YYYY-MM-DD');
-        const inputDate = moment(date).format('YYYY-MM-DD');
+        const yesterday = moment().tz('Asia/Kolkata').subtract(1, 'day').format('MM/DD/YYYY');
+        const inputDate = DateValidator.parseDate(date).format('MM/DD/YYYY');
         return yesterday === inputDate;
     }
 
@@ -63,10 +75,11 @@ class DateValidator {
             }
 
             // Check if date is valid
-            if (!moment(date).isValid()) {
+            const parsedDate = DateValidator.parseDate(date);
+            if (!parsedDate.isValid()) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Invalid date format. Use YYYY-MM-DD format.',
+                    message: 'Invalid date format. Use MM/DD/YYYY format.',
                     error: 'INVALID_DATE_FORMAT'
                 });
             }
@@ -122,10 +135,11 @@ class DateValidator {
             }
 
             // Check if date is valid
-            if (!moment(date).isValid()) {
+            const parsedDate = DateValidator.parseDate(date);
+            if (!parsedDate.isValid()) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Invalid date format. Use YYYY-MM-DD format.',
+                    message: 'Invalid date format. Use MM/DD/YYYY format.',
                     error: 'INVALID_DATE_FORMAT'
                 });
             }

@@ -59,7 +59,7 @@ export async function updateMetricsExcel(user, metricsData) {
 
   // ✅ Add one new row
   sheet.addRow([
-    new Date().toLocaleDateString(),
+    new Date().toLocaleDateString('en-US'), // Use MM/DD/YYYY format
     user.name,
     user.email,
     metricsData.ticketsAssigned,

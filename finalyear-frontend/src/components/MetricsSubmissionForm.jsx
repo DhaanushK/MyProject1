@@ -2,8 +2,26 @@ import { useState } from 'react';
 import axios from '../config/axios';
 
 export default function MetricsSubmissionForm() {
+  // Helper function to format date as MM/DD/YYYY
+  const formatDateToMMDDYYYY = (date) => {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  // Helper function to convert MM/DD/YYYY back to YYYY-MM-DD for input display
+  const formatDateToYYYYMMDD = (dateStr) => {
+    if (dateStr.includes('/')) {
+      const [month, day, year] = dateStr.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format for input
     ticketsAssigned: '',
     ticketsResolved: '',
     slaBreaches: '',
@@ -69,7 +87,14 @@ export default function MetricsSubmissionForm() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/metrics/submit', formData, {
+      
+      // Format the date to MM/DD/YYYY before sending to backend
+      const formattedFormData = {
+        ...formData,
+        date: formatDateToMMDDYYYY(formData.date)
+      };
+      
+      const response = await axios.post('/api/metrics/submit', formattedFormData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -111,7 +136,14 @@ export default function MetricsSubmissionForm() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put('/api/metrics/update', formData, {
+      
+      // Format the date to MM/DD/YYYY before sending to backend
+      const formattedFormData = {
+        ...formData,
+        date: formatDateToMMDDYYYY(formData.date)
+      };
+      
+      const response = await axios.put('/api/metrics/update', formattedFormData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

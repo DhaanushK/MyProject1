@@ -2,6 +2,7 @@ import express from "express";
 import { authMiddleware, authorizeRoles } from "../middleware/auth.js";
 import DateValidator from "../middleware/dateValidation.js";
 import eventLogger from "../services/eventLogger.js";
+import activityLogger from "../utils/activityLogger.js";
 import { sheets, appendRow } from "../utils/googleSheets.js";
 import { getUserMetricsData, getAllTeamMetricsData } from "../services/userSheetsService.js";
 import User from "../models/User.js";
@@ -106,7 +107,19 @@ router.put(
         }
       });
 
-      // Log each changed field
+      // Log the update to activity logger
+      const eventDetails = activityLogger.formatMetricsEvent('Updated', {
+        date,
+        ticketsAssigned,
+        ticketsResolved,
+        slaBreaches,
+        reopenedTickets,
+        clientInteractions,
+        remarks
+      });
+      activityLogger.logActivity(user.name, user.role, eventDetails);
+
+      // Log each changed field to event logger (existing functionality)
       const fields = [
         { name: 'Tickets Assigned', old: oldValues.ticketsAssigned, new: ticketsAssigned },
         { name: 'Tickets Resolved', old: oldValues.ticketsResolved, new: ticketsResolved },
@@ -204,8 +217,8 @@ router.post(
         remarks
       } = req.body;
 
-      // Use provided date or current date
-      const submissionDate = date || new Date().toLocaleDateString('en-IN');
+      // Use provided date or current date in MM/DD/YYYY format
+      const submissionDate = date || new Date().toLocaleDateString('en-US');
 
       const values = [
         submissionDate,
@@ -233,7 +246,19 @@ router.post(
 
       await appendRow(process.env.SPREADSHEET_ID, values, userSheet.properties.title);
 
-      // Log the submission
+      // Log the submission to activity logger
+      const eventDetails = activityLogger.formatMetricsEvent('Submitted', {
+        date: submissionDate,
+        ticketsAssigned,
+        ticketsResolved,
+        slaBreaches,
+        reopenedTickets,
+        clientInteractions,
+        remarks
+      });
+      activityLogger.logActivity(user.name, user.role, eventDetails);
+
+      // Log the submission to event logger (existing functionality)
       await eventLogger.logEvent({
         userName: user.name,
         userRole: user.role,
