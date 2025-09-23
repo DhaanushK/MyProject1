@@ -22,8 +22,8 @@ const APPROVED_EMAILS = [
   'kanishkka0208@gmail.com',      // Team Member
   'japraveen1212@gmail.com',      // Team Member  
   'winnish0703@gmail.com',        // Team Member
-  'reddyvuppu@gmail.com',         // Team Member
-  'jsam01@gmail.com',             // Team Member
+  'reddyvuppu3@gmail.com',        // Team Member - Updated
+  'jsam290104@gmail.com',         // Team Member - Updated
   'kkumar05@gmail.com'            // Team Member
 ];
 

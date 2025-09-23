@@ -13,8 +13,8 @@ const emailMapping = {
   'kanishka.a0208@gmail.com': 'kanishkka0208@gmail.com', 
   'praveenj.jio@gmail.com': 'japraveen1212@gmail.com',
   'winnishej703@gmail.com': 'winnish0703@gmail.com',
-  'reddyvuppu@gmail.com': 'reddyvuppu@gmail.com', // This one seems already correct
-  'jsam01@gmail.com': 'jsam01@gmail.com', // This one seems already correct
+  'reddyvuppu@gmail.com': 'reddyvuppu3@gmail.com', // Updated
+  'jsam01@gmail.com': 'jsam290104@gmail.com', // Updated
   'kkumar05@gmail.com': 'kkumar05@gmail.com' // This one seems already correct
 };
 

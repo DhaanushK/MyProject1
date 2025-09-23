@@ -124,13 +124,13 @@ function generatePostmanHelper() {
 const fs = require('fs');
 
 const emailMapping = {
-  'dhaanushk1110@gmail.com': 'dhaanush@company.com',
-  'kanishka.a0208@gmail.com': 'kanishka@company.com',
-  'praveenj.jio@gmail.com': 'praveen@company.com',
-  'winnishej703@gmail.com': 'winnish@company.com',
-  'reddyvuppu@gmail.com': 'vuppu@company.com',
-  'jsam01@gmail.com': 'sam@company.com',
-  'kkumar05@gmail.com': 'kumar@company.com'
+  'dhaanushk1110@gmail.com': 'dhaanushk1110@gmail.com', // Keep unchanged
+  'kanishka.a0208@gmail.com': 'kanishkka0208@gmail.com',
+  'praveenj.jio@gmail.com': 'japraveen1212@gmail.com',
+  'winnishej703@gmail.com': 'winnish0703@gmail.com',
+  'reddyvuppu@gmail.com': 'reddyvuppu3@gmail.com', // Updated
+  'jsam01@gmail.com': 'jsam290104@gmail.com', // Updated
+  'kkumar05@gmail.com': 'kkumar05@gmail.com'
 };
 
 function updatePostmanCollection(collectionPath) {
