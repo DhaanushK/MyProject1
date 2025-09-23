@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'http://localhost:5001',
   timeout: 10000, // 10 seconds timeout
   maxContentLength: 10 * 1024 * 1024, // 10MB max content length
   maxBodyLength: 10 * 1024 * 1024, // 10MB max body length

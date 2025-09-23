@@ -2,6 +2,7 @@ import { useState } from "react";
 import TeamMemberTabs from "../components/TeamMemberTabs.jsx";
 import TopBar from "../components/TopBar";
 import ActivityLogs from "../components/ActivityLogs.jsx";
+import ProjectManagerEmailDashboard from "../components/ProjectManagerEmailDashboard.jsx";
 
 export default function PMDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -117,6 +118,13 @@ export default function PMDashboard() {
           <div>
             <h2 style={{ marginBottom: "20px", color: "#333" }}>📋 Activity Logs</h2>
             <ActivityLogs />
+          </div>
+        )}
+
+        {activeTab === 'email' && (
+          <div>
+            <h2 style={{ marginBottom: "20px", color: "#333" }}>📧 Email Dashboard</h2>
+            <ProjectManagerEmailDashboard />
           </div>
         )}
       </div>

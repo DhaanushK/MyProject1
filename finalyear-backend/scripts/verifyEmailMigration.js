@@ -130,7 +130,7 @@ const emailMapping = {
   'winnishej703@gmail.com': 'winnish0703@gmail.com',
   'reddyvuppu@gmail.com': 'reddyvuppu3@gmail.com', // Updated
   'jsam01@gmail.com': 'jsam290104@gmail.com', // Updated
-  'kkumar05@gmail.com': 'kkumar05@gmail.com'
+  'kkumar05@gmail.com': 'kkumar210504@gmail.com'
 };
 
 function updatePostmanCollection(collectionPath) {

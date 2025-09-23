@@ -12,6 +12,7 @@ export default function TopBar({ title, activeTab, setActiveTab, userRole }) {
       return [
         ...commonTabs,
         { id: 'performance', label: 'Performance Analysis' },
+        { id: 'email', label: 'Email Management' },
         { id: 'activity-logs', label: 'Activity Logs' }
       ];
     } else if (userRole === 'team_lead') {
@@ -112,6 +113,7 @@ export default function TopBar({ title, activeTab, setActiveTab, userRole }) {
             >
               {tab.id === 'dashboard' && '🏠 '}
               {tab.id === 'performance' && '📊 '}
+              {tab.id === 'email' && '📧 '}
               {tab.id === 'activity-logs' && '📋 '}
               {tab.label}
             </button>
