@@ -6,6 +6,7 @@ import activityLogger from "../utils/activityLogger.js";
 import { sheets, appendRow } from "../utils/googleSheets.js";
 import { getUserMetricsData, getAllTeamMetricsData } from "../services/userSheetsService.js";
 import User from "../models/User.js";
+import compression from 'compression';
 import path from "path";
 import fs from "fs";
 import { google } from "googleapis";

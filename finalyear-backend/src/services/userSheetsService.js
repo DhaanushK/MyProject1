@@ -11,11 +11,32 @@ async function getSheets() {
   return sheets;
 }
 
+// Cache metrics data for 5 minutes
+let metricsCache = {
+  data: null,
+  timestamp: null
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export async function getAllTeamMetricsData(sheetId) {
   try {
     console.log('=== getAllTeamMetricsData called ===');
-    console.log('Attempting to fetch all team metrics');
+
+    // Check cache first
+    const now = Date.now();
+    if (metricsCache.data && metricsCache.timestamp && (now - metricsCache.timestamp < CACHE_DURATION)) {
+      console.log('Returning cached metrics data');
+      return metricsCache.data;
+    }
+
+    console.log('Cache miss - fetching fresh metrics data');
     console.log('Using spreadsheet ID:', sheetId);
+    
+    // Set a timeout for the entire operation
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Google Sheets operation timed out')), 25000)
+    );
     
     if (!sheetId) {
       throw new Error('Spreadsheet ID is required');
@@ -23,11 +44,21 @@ export async function getAllTeamMetricsData(sheetId) {
 
     const sheets = await getSheets();
 
-    // Get all sheets in the spreadsheet
-    const spreadsheet = await sheets.spreadsheets.get({
-      spreadsheetId: sheetId,
-    }).catch(error => {
+    // Race between the sheets operation and timeout
+    const spreadsheet = await Promise.race([
+      sheets.spreadsheets.get({
+        spreadsheetId: sheetId,
+      }),
+      timeout
+    ]).catch(error => {
       console.error('Error getting spreadsheet:', error);
+      if (error.message === 'Google Sheets operation timed out') {
+        // Return cached data if available, even if expired
+        if (metricsCache.data) {
+          console.log('Returning expired cache data due to timeout');
+          return { data: metricsCache.data };
+        }
+      }
       throw new Error(`Failed to access spreadsheet: ${error.message}`);
     });
 
@@ -102,6 +133,11 @@ export async function getAllTeamMetricsData(sheetId) {
       acc[metric.sheetName] = (acc[metric.sheetName] || 0) + 1;
       return acc;
     }, {}));
+
+    // Update cache with the fresh data
+    metricsCache.data = allMetrics;
+    metricsCache.timestamp = Date.now();
+    console.log('Updated metrics cache');
 
     return allMetrics;
   } catch (error) {

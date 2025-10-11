@@ -3,6 +3,7 @@ import TopBar from "../components/TopBar";
 import TeamLeadMetrics from "../components/TeamLeadMetrics";
 import MetricsSubmissionForm from "../components/MetricsSubmissionForm";
 import ActivityLogs from "../components/ActivityLogs";
+import TeamLeaderEmailDashboard from "../components/TeamLeaderEmailDashboard";
 
 export default function LeadDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -23,6 +24,12 @@ export default function LeadDashboard() {
             <MetricsSubmissionForm />
             <TeamLeadMetrics />
           </>
+        )}
+
+        {activeTab === 'email' && (
+          <div>
+            <TeamLeaderEmailDashboard />
+          </div>
         )}
 
         {activeTab === 'activity-logs' && (

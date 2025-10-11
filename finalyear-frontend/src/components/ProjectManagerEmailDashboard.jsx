@@ -123,7 +123,10 @@ export default function ProjectManagerEmailDashboard() {
       setLoading(true);
       setMessage('');
 
-      const response = await axios.post('/api/pm-email/send-urgent-alert', alertForm);
+      // Increase timeout for alert sending to 30 seconds
+      const response = await axios.post('/api/pm-email/send-urgent-alert', alertForm, {
+        timeout: 30000 // 30 second timeout for urgent alerts
+      });
       
       setMessage(`🚨 Urgent alert sent successfully to ${response.data.results.length} recipients`);
       setAlertForm({

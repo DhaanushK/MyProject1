@@ -1,6 +1,7 @@
 import { useState } from "react";
 import IndividualDashboard from "../components/IndividualDashboard";
 import MetricsSubmissionForm from "../components/MetricsSubmissionForm";
+import TeamMemberEmailDashboard from "../components/TeamMemberEmailDashboard";
 import TopBar from "../components/TopBar";
 
 export default function MemberDashboard() {
@@ -15,8 +16,13 @@ export default function MemberDashboard() {
         userRole="team_member"
       />
       <div style={{ padding: "20px" }}>
-        <MetricsSubmissionForm />
-        <IndividualDashboard />
+        {activeTab === 'dashboard' && (
+          <>
+            <MetricsSubmissionForm />
+            <IndividualDashboard />
+          </>
+        )}
+        {activeTab === 'email' && <TeamMemberEmailDashboard />}
       </div>
     </div>
   );

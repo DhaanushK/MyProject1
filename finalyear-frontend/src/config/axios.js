@@ -2,34 +2,63 @@ import axios from 'axios';
 
 const instance = axios.create({
   baseURL: 'http://localhost:5001',
-  timeout: 10000, // 10 seconds timeout
-  maxContentLength: 10 * 1024 * 1024, // 10MB max content length
-  maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
-  withCredentials: true, // Enable credentials
+  timeout: 60000, // 60 seconds timeout
+  maxContentLength: 50 * 1024 * 1024, // 50MB
+  maxBodyLength: 50 * 1024 * 1024, // 50MB
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache'
   }
 });
 
-// Add a request interceptor to add the token to all requests
+// Add a request interceptor to handle headers and authentication
 instance.interceptors.request.use(
   (config) => {
+    // Initialize headers if not present
+    config.headers = config.headers || {};
+
+    // Add auth token if available
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Ensure content type and other headers are set
+    config.headers['Content-Type'] = 'application/json';
+    config.headers['Accept'] = 'application/json';
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers['Pragma'] = 'no-cache';
+
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 // Add a response interceptor to handle errors
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Successful response handling
+    return response;
+  },
   (error) => {
+    // Error handling
+    console.error('API Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
+    });
+
+    // Handle specific error cases
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx

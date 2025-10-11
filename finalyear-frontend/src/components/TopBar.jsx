@@ -18,7 +18,13 @@ export default function TopBar({ title, activeTab, setActiveTab, userRole }) {
     } else if (userRole === 'team_lead') {
       return [
         ...commonTabs,
+        { id: 'email', label: 'Email Management' },
         { id: 'activity-logs', label: 'Activity Logs' }
+      ];
+    } else if (userRole === 'team_member') {
+      return [
+        ...commonTabs,
+        { id: 'email', label: 'Email & Support' }
       ];
     } else {
       return commonTabs;

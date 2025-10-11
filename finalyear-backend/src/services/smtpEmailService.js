@@ -20,7 +20,10 @@ class SMTPEmailService {
         auth: {
           user: process.env.EMAIL_USER || 'dhaanushk1110@gmail.com', // Your Gmail
           pass: process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASSWORD // App Password
-        }
+        },
+        connectionTimeout: 30000, // 30 second connection timeout
+        greetingTimeout: 30000,   // 30 second greeting timeout
+        socketTimeout: 30000      // 30 second socket timeout
       });
 
       // Verify connection
@@ -122,7 +125,8 @@ class SMTPEmailService {
           to: email,
           subject: `🚨 [PM URGENT] ${subject}`,
           html: htmlBody,
-          priority: priority === 'high' ? 'high' : 'normal'
+          priority: priority === 'high' ? 'high' : 'normal',
+          timeout: 30000 // 30 second timeout for urgent alerts
         };
 
         const result = await this.transporter.sendMail(mailOptions);

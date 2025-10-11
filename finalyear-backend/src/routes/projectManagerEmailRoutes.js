@@ -8,9 +8,13 @@ const router = express.Router();
 
 // Middleware to ensure only project managers can access these routes
 const projectManagerOnly = (req, res, next) => {
-  if (req.user.role !== 'project_manager') {
+  if (
+    req.user.role !== 'project_manager' &&
+    req.user.role !== 'team_lead' &&
+    req.user.role !== 'team_member'
+  ) {
     return res.status(403).json({ 
-      message: 'Access denied: Project Manager routes only' 
+      message: 'Access denied: Project Manager, Team Lead, or Team Member routes only' 
     });
   }
   next();

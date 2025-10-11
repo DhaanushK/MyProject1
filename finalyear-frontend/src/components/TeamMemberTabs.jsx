@@ -19,28 +19,57 @@ export default function TeamMemberTabs() {
   }, []);
 
   const fetchTeamData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('=== TeamMemberTabs: Making API call to /api/metrics/all ===');
-      const response = await axios.get('/api/metrics/all');
-      console.log('=== TeamMemberTabs: Received response ===', response.data);
-      setTeamData(response.data);
-      
-      // Set first team member as active tab
-      if (response.data?.individualKPIs) {
-        const firstMember = Object.keys(response.data.individualKPIs)[0];
-        console.log('Setting active tab to:', firstMember);
-        console.log('All team members:', Object.keys(response.data.individualKPIs));
-        setActiveTab(firstMember);
+    const retryDelay = 2000; // 2 seconds
+    const maxRetries = 3;
+    let retries = 0;
+
+    const attemptFetch = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log(`=== TeamMemberTabs: Making API call to /api/metrics/all (Attempt ${retries + 1}/${maxRetries}) ===`);
+        const response = await axios.get('/api/metrics/all', {
+          timeout: 60000, // 60 second timeout
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        if (!response.data) {
+          throw new Error('No data received from server');
+        }
+
+        console.log('=== TeamMemberTabs: Received response ===', response.data);
+        setTeamData(response.data);
+        
+        // Set first team member as active tab
+        if (response.data?.individualKPIs) {
+          const firstMember = Object.keys(response.data.individualKPIs)[0];
+          console.log('Setting active tab to:', firstMember);
+          console.log('All team members:', Object.keys(response.data.individualKPIs));
+          setActiveTab(firstMember);
+        } else {
+          throw new Error('Invalid data format received');
+        }
+      } catch (err) {
+        console.error('Error fetching team metrics:', err);
+        
+        if (retries < maxRetries - 1) {
+          retries++;
+          console.log(`Retrying in ${retryDelay}ms... (Attempt ${retries + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return attemptFetch();
+        }
+        
+        setError(err.response?.data?.message || err.message || 'Failed to load team metrics');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching team metrics:', err);
-      setError('Failed to load team metrics');
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    await attemptFetch();
   };
 
   const getMemberData = (memberName) => {
