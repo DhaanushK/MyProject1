@@ -1,23 +1,22 @@
 import { google } from "googleapis";
-import { getGoogleAuth } from "../services/googleAuth.js";
+import { getSheets } from "../services/googleSheets.js";
 
 // Create and export the sheets instance
 let sheetsInstance = null;
 
-async function getSheets() {
+async function initializeSheets() {
   if (!sheetsInstance) {
-    const auth = await getGoogleAuth();
-    sheetsInstance = google.sheets({ version: "v4", auth });
+    sheetsInstance = await getSheets();
   }
   return sheetsInstance;
 }
 
 export const sheets = { 
   spreadsheets: { 
-    get: async (params) => (await getSheets()).spreadsheets.get(params),
+    get: async (params) => (await initializeSheets()).spreadsheets.get(params),
     values: {
-      get: async (params) => (await getSheets()).spreadsheets.values.get(params),
-      update: async (params) => (await getSheets()).spreadsheets.values.update(params)
+      get: async (params) => (await initializeSheets()).spreadsheets.values.get(params),
+      update: async (params) => (await initializeSheets()).spreadsheets.values.update(params)
     }
   } 
 };

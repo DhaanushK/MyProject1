@@ -3,18 +3,53 @@ import { authMiddleware, authorizeRoles } from "../middleware/auth.js";
 import DateValidator from "../middleware/dateValidation.js";
 import eventLogger from "../services/eventLogger.js";
 import activityLogger from "../utils/activityLogger.js";
-import { sheets, appendRow } from "../utils/googleSheets.js";
+import { sheets, appendRow } from "../services/googleSheets.js";
 import { getUserMetricsData, getAllTeamMetricsData } from "../services/userSheetsService.js";
 import User from "../models/User.js";
 import compression from 'compression';
 import path from "path";
 import fs from "fs";
-import { google } from "googleapis";
-import { getGoogleAuth } from "../services/googleAuth.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 const router = express.Router();
+
+// Route to verify Google Sheets access
+router.get('/verify-sheets', authMiddleware, async (req, res) => {
+  try {
+    const { validateSheet } = await import('../services/googleSheets.js');
+    const isValid = await validateSheet(process.env.GOOGLE_SPREADSHEET_ID);
+    res.json({
+      success: true,
+      accessible: isValid,
+      message: isValid ? 'Google Sheets is accessible' : 'Google Sheets is not accessible'
+    });
+  } catch (error) {
+    console.error('Sheets verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Error handling middleware
+const errorHandler = (err, req, res, next) => {
+  console.error('Metrics Route Error:', err);
+  
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ message: err.message });
+  }
+  
+  if (err.code === 'ECONNABORTED') {
+    return res.status(408).json({ message: 'Request timeout' });
+  }
+  
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+};
 
 // APPROVED EMAILS FOR METRICS SUBMISSION
 // Only users with these email addresses can submit metrics to dashboards
@@ -54,11 +89,13 @@ const validateApprovedEmail = async (req, res, next) => {
   }
 };
 
-console.log('Using spreadsheet ID:', process.env.SPREADSHEET_ID);
+console.log('Using spreadsheet ID:', process.env.GOOGLE_SPREADSHEET_ID);
+
+// Update metrics route with date validation and logging
 router.put(
   "/update",
   authMiddleware,
-  validateApprovedEmail, // NEW: Validate email is approved
+  validateApprovedEmail,
   DateValidator.validateDateForEntry,
   async (req, res) => {
     try {
@@ -84,7 +121,7 @@ router.put(
       }
 
       const spreadsheet = await sheets.spreadsheets.get({
-        spreadsheetId: process.env.SPREADSHEET_ID,
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       });
 
       const userSheet = spreadsheet.data.sheets.find(sheet => 
@@ -98,7 +135,7 @@ router.put(
       // Get current data to find the row to update
       const range = `${user.name}!A:I`;
       const result = await sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.SPREADSHEET_ID,
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
         range: range,
       });
 
@@ -141,7 +178,7 @@ router.put(
       ];
 
       await sheets.spreadsheets.values.update({
-        spreadsheetId: process.env.SPREADSHEET_ID,
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
         range: updateRange,
         valueInputOption: 'RAW',
         resource: {
@@ -161,7 +198,7 @@ router.put(
       });
       activityLogger.logActivity(user.name, user.role, eventDetails);
 
-      // Log each changed field to event logger (existing functionality)
+      // Log each changed field to event logger
       const fields = [
         { name: 'Tickets Assigned', old: oldValues.ticketsAssigned, new: ticketsAssigned },
         { name: 'Tickets Resolved', old: oldValues.ticketsResolved, new: ticketsResolved },
@@ -209,15 +246,23 @@ router.get(
   }
 );
 
-console.log('Using spreadsheet ID:', process.env.SPREADSHEET_ID);
-
 // Consolidated KPI calculation function
 function calculateUserKPIs(data, options = { includeEfficiency: false }) {
-  const totalTasks = data.reduce((sum, d) => sum + d.totalTasks, 0);
-  const completedTasks = data.reduce((sum, d) => sum + d.completed, 0);
-  const pendingTasks = data.reduce((sum, d) => sum + d.pending, 0);
-  const lateTasks = data.reduce((sum, d) => sum + d.late, 0);
-  const totalClientInteractions = data.reduce((sum, d) => sum + (d.clientInteractions || 0), 0);
+  // Use simple for loop
+  let totalTasks = 0;
+  let completedTasks = 0;
+  let pendingTasks = 0;
+  let lateTasks = 0;
+  let totalClientInteractions = 0;
+  
+  for (let i = 0; i < data.length; i++) {
+    const d = data[i];
+    totalTasks += d.totalTasks || 0;
+    completedTasks += d.completed || 0;
+    pendingTasks += d.pending || 0;
+    lateTasks += d.late || 0;
+    totalClientInteractions += d.clientInteractions || 0;
+  }
 
   const result = {
     totalTasks,
@@ -241,8 +286,8 @@ function calculateUserKPIs(data, options = { includeEfficiency: false }) {
 router.post(
   "/submit",
   authMiddleware,
-  validateApprovedEmail, // NEW: Validate email is approved
-  DateValidator.validateDateForTeamLead, // Use team lead validation for flexibility
+  validateApprovedEmail,
+  DateValidator.validateDateForTeamLead,
   async (req, res) => {
     try {
       const user = await User.findById(req.user.id);
@@ -278,7 +323,7 @@ router.post(
       ];
 
       const spreadsheet = await sheets.spreadsheets.get({
-        spreadsheetId: process.env.SPREADSHEET_ID,
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       });
 
       const userSheet = spreadsheet.data.sheets.find(sheet => 
@@ -289,7 +334,9 @@ router.post(
         throw new Error("No sheet found for this user");
       }
 
-      await appendRow(process.env.SPREADSHEET_ID, values, userSheet.properties.title);
+      // Create the range for append operation
+      const range = `${userSheet.properties.title}!A:I`;
+      await appendRow(process.env.GOOGLE_SPREADSHEET_ID, range, values);
 
       // Log the submission to activity logger
       const eventDetails = activityLogger.formatMetricsEvent('Submitted', {
@@ -303,7 +350,7 @@ router.post(
       });
       activityLogger.logActivity(user.name, user.role, eventDetails);
 
-      // Log the submission to event logger (existing functionality)
+      // Log the submission to event logger
       await eventLogger.logEvent({
         userName: user.name,
         userRole: user.role,
@@ -334,21 +381,11 @@ router.post(
   }
 );
 
-// Team Lead checks team’s status
-router.get(
-  "/team",
-  authMiddleware,
-  authorizeRoles("team_lead"),
-  (req, res) => {
-    res.json({ message: "Team Lead can see team metrics" });
-  }
-);
-
 // Get individual user metrics with KPIs (only for approved emails)
 router.get(
   "/user",
   authMiddleware,
-  validateApprovedEmail, // NEW: Validate email is approved
+  validateApprovedEmail,
   async (req, res) => {
     try {
       console.log('User from token:', req.user);
@@ -368,10 +405,10 @@ router.get(
         email: user.email
       });
 
-      console.log('Attempting to get metrics for user:', userFullName, 'with spreadsheet ID:', process.env.SPREADSHEET_ID);
+      console.log('Attempting to get metrics for user:', userFullName, 'with spreadsheet ID:', process.env.GOOGLE_SPREADSHEET_ID);
       
       try {
-        const metrics = await getUserMetricsData(process.env.SPREADSHEET_ID, userFullName);
+        const metrics = await getUserMetricsData(process.env.GOOGLE_SPREADSHEET_ID, userFullName);
         console.log('Retrieved metrics count:', metrics.length);
         
         // Calculate KPIs for the user's data
@@ -390,7 +427,7 @@ router.get(
           message: "Failed to fetch user metrics",
           error: error.message,
           userName: userFullName,
-          spreadsheetId: process.env.SPREADSHEET_ID
+          spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID
         });
       }
     } catch (err) {
@@ -415,28 +452,23 @@ router.get(
       console.log('=== /metrics/all endpoint called ===');
       console.log('PM user:', req.user);
       
-      const allMetrics = await getAllTeamMetricsData(process.env.SPREADSHEET_ID);
-      console.log('Total metrics fetched:', allMetrics.length);
+      const teamData = await getAllTeamMetricsData(process.env.GOOGLE_SPREADSHEET_ID);
+      console.log('Team data received:', typeof teamData, Object.keys(teamData || {}));
       
-      // Calculate aggregated KPIs for all team members
-      const aggregatedKPIs = calculateUserKPIs(allMetrics, { includeEfficiency: true });
+      // Extract data from the teamData object
+      const allMetrics = [];
+      const userMetrics = teamData.userMetrics || {};
+      const individualKPIs = teamData.individualKPIs || {};
+      const aggregatedKPIs = teamData.aggregatedKPIs || {};
       
-      // Group metrics by user for individual analysis
-      const userMetrics = {};
-      allMetrics.forEach(metric => {
-        // Use sheet name for grouping to ensure consistency
-        const userName = metric.sheetName || metric.name;
-        if (!userMetrics[userName]) {
-          userMetrics[userName] = [];
+      // Flatten all metrics into a single array for backward compatibility
+      for (const userName in userMetrics) {
+        if (Array.isArray(userMetrics[userName])) {
+          for (let i = 0; i < userMetrics[userName].length; i++) {
+            allMetrics.push(userMetrics[userName][i]);
+          }
         }
-        userMetrics[userName].push(metric);
-      });
-
-      // Calculate individual user KPIs
-      const individualKPIs = {};
-      Object.keys(userMetrics).forEach(userName => {
-        individualKPIs[userName] = calculateUserKPIs(userMetrics[userName]);
-      });
+      }
 
       console.log('Sending team data:', {
         totalMetrics: allMetrics.length,
@@ -448,7 +480,8 @@ router.get(
         allMetrics,
         aggregatedKPIs,
         individualKPIs,
-        userMetrics
+        userMetrics,
+        teamMembers: Object.keys(individualKPIs)
       });
     } catch (err) {
       console.error('Error fetching all metrics:', err);

@@ -13,6 +13,10 @@ function Login() {
       const res = await axios.post("/api/auth/login", {
         email,
         password,
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       });
 
       const { token, role, email: userEmail, username } = res.data;

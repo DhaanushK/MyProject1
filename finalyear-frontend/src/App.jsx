@@ -1,6 +1,7 @@
 import { Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import IndividualDashboard from './components/IndividualDashboard';
 import VisualizationDashboard from './components/VisualizationDashboard';
+import GoogleSheetsViewer from './components/GoogleSheetsViewer';
 import MemberDashboard from './pages/MemberDashboard';
 import LeadDashboard from './pages/LeadDashboard';
 import PMDashboard from './pages/PMDashboard';
@@ -58,6 +59,13 @@ function App() {
               }}>Performance Analysis</Link>
             </li>
           )}
+          <li>
+            <Link to={`/${basePath}/sheets`} style={{ 
+              textDecoration: 'none', 
+              color: '#333',
+              fontWeight: '500'
+            }}>Google Sheets</Link>
+          </li>
         </ul>
       </nav>
 
@@ -75,6 +83,8 @@ function App() {
         {basePath !== 'pm' && (
           <Route path="performance" element={<Navigate to={`/${basePath}/dashboard/performance`} replace />} />
         )}
+        {/* Google Sheets viewer route */}
+        <Route path="sheets" element={<GoogleSheetsViewer />} />
       </Routes>
     </div>
   );

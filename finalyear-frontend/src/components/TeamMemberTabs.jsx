@@ -1,5 +1,19 @@
 import { useState, useEffect } from "react";
 import axios from "../config/axios";
+
+// Add loading spinner animation
+const spinnerStyle = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Add the style to the document
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = spinnerStyle;
+document.head.appendChild(styleSheet);
 import {
   PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -17,6 +31,17 @@ export default function TeamMemberTabs() {
     console.log('=== TeamMemberTabs component mounted ===');
     fetchTeamData();
   }, []);
+
+  useEffect(() => {
+    if (teamData) {
+      console.log('Team Data updated:', teamData);
+      // Set first team member as active tab if none is selected
+      if (!activeTab && teamData.teamMembers && teamData.teamMembers.length > 0) {
+        console.log('Setting active tab to first team member:', teamData.teamMembers[0]);
+        setActiveTab(teamData.teamMembers[0]);
+      }
+    }
+  }, [teamData, activeTab]);
 
   const fetchTeamData = async () => {
     const retryDelay = 2000; // 2 seconds
@@ -42,16 +67,25 @@ export default function TeamMemberTabs() {
         }
 
         console.log('=== TeamMemberTabs: Received response ===', response.data);
+        
+        // Validate the response structure
+        if (!response.data.teamMembers || !Array.isArray(response.data.teamMembers)) {
+          throw new Error('Invalid data format: missing team members array');
+        }
+
+        if (!response.data.userMetrics || !response.data.individualKPIs) {
+          throw new Error('Invalid data format: missing metrics or KPIs data');
+        }
+
         setTeamData(response.data);
         
         // Set first team member as active tab
-        if (response.data?.individualKPIs) {
-          const firstMember = Object.keys(response.data.individualKPIs)[0];
+        if (response.data.teamMembers.length > 0) {
+          const firstMember = response.data.teamMembers[0];
           console.log('Setting active tab to:', firstMember);
-          console.log('All team members:', Object.keys(response.data.individualKPIs));
           setActiveTab(firstMember);
         } else {
-          throw new Error('Invalid data format received');
+          throw new Error('No team members found in data');
         }
       } catch (err) {
         console.error('Error fetching team metrics:', err);
@@ -74,12 +108,16 @@ export default function TeamMemberTabs() {
 
   const getMemberData = (memberName) => {
     if (!teamData?.userMetrics || !memberName) return [];
-    return teamData.userMetrics[memberName] || [];
+    const memberData = teamData.userMetrics[memberName] || [];
+    console.log('Member Data for', memberName, ':', memberData);
+    return memberData;
   };
 
   const getMemberKPIs = (memberName) => {
     if (!teamData?.individualKPIs || !memberName) return {};
-    return teamData.individualKPIs[memberName] || {};
+    const kpis = teamData.individualKPIs[memberName] || {};
+    console.log('KPIs for', memberName, ':', kpis);
+    return kpis;
   };
 
   const processWeeklyData = (memberData) => {
@@ -87,7 +125,9 @@ export default function TeamMemberTabs() {
     
     // Group by date and calculate daily totals
     const dailyData = {};
-    memberData.forEach(entry => {
+    
+    for (let i = 0; i < memberData.length; i++) {
+      const entry = memberData[i];
       if (entry.date) {
         const date = new Date(entry.date).toLocaleDateString();
         if (!dailyData[date]) {
@@ -104,9 +144,13 @@ export default function TeamMemberTabs() {
         dailyData[date].late += entry.late;
         dailyData[date].interactions += entry.clientInteractions;
       }
-    });
+    }
 
-    return Object.values(dailyData).slice(-7); // Last 7 days
+    const result = [];
+    for (const key in dailyData) {
+      result.push(dailyData[key]);
+    }
+    return result.slice(-7); // Last 7 days
   };
 
   const renderDailyPerformance = (memberName) => {
@@ -353,17 +397,53 @@ export default function TeamMemberTabs() {
   if (loading) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
-        <p>Loading team data...</p>
+        <div style={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid #f3f3f3',
+            borderTop: '3px solid #1976d2',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }}></div>
+          <p>Loading team data...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: "20px" }}>
-        <div style={{ color: "red", padding: "20px", background: "#ffebee", borderRadius: "5px" }}>
-          <p>Error: {error}</p>
-          <button onClick={fetchTeamData} style={{ marginTop: "10px", padding: "5px 10px" }}>
+      <div style={{ padding: "20px", textAlign: "center" }}>
+        <div style={{ 
+          color: "#d32f2f",
+          padding: "20px",
+          background: "#ffebee",
+          borderRadius: "8px",
+          maxWidth: "600px",
+          margin: "0 auto"
+        }}>
+          <h3 style={{ margin: "0 0 10px 0" }}>Error Loading Data</h3>
+          <p style={{ marginBottom: "15px" }}>{error}</p>
+          <button 
+            onClick={fetchTeamData}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={e => e.target.style.backgroundColor = '#1565c0'}
+            onMouseOut={e => e.target.style.backgroundColor = '#1976d2'}
+          >
             Retry
           </button>
         </div>
@@ -371,9 +451,10 @@ export default function TeamMemberTabs() {
     );
   }
 
-  const teamMembers = teamData?.individualKPIs ? Object.keys(teamData.individualKPIs) : [];
-
-  if (teamMembers.length === 0) {
+  // Get team members from the data
+  const teamMembers = teamData?.teamMembers || [];
+  
+  if (!teamData || !activeTab || teamMembers.length === 0) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
         <p>No team members found.</p>

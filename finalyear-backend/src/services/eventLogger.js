@@ -1,9 +1,8 @@
-import { google } from 'googleapis';
-import { getGoogleAuth } from './googleAuth.js';
+import { getSheets } from './googleSheets.js';
 
 class EventLogger {
     constructor() {
-        this.logSheetId = process.env.SPREADSHEET_ID; // Use the same spreadsheet for logs
+        this.logSheetId = process.env.GOOGLE_SPREADSHEET_ID;
         this.logSheetName = 'Event_Logs';
     }
 
@@ -22,8 +21,7 @@ class EventLogger {
      */
     async logEvent(eventData) {
         try {
-            const auth = await getGoogleAuth();
-            const sheets = google.sheets({ version: 'v4', auth });
+            const sheets = await getSheets();
 
             // Ensure log sheet exists
             await this.ensureLogSheetExists(sheets);
@@ -171,8 +169,7 @@ class EventLogger {
      */
     async getRecentLogs(userName = null, limit = 50) {
         try {
-            const auth = await getGoogleAuth();
-            const sheets = google.sheets({ version: 'v4', auth });
+            const sheets = await getSheets();
 
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId: this.logSheetId,

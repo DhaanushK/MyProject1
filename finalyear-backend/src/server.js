@@ -2,14 +2,21 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import compression from "compression";
+import mongoose from "mongoose";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import metricsRoutes from "./routes/metricsRoutes.js";
 import logsRoutes from "./routes/logsRoutes.js";
-import projectManagerEmailRoutes from "./routes/projectManagerEmailRoutes.js"; // ✅ New email routes
-import teamLeaderEmailRoutes from "./routes/teamLeaderEmailRoutes.js"; // ✅ Team Leader email routes
-import teamMemberEmailRoutes from "./routes/teamMemberEmailRoutes.js"; // ✅ Team Member email routes
-dotenv.config();
+import sheetRoutes from "./routes/sheetRoutes.js";
+import projectManagerEmailRoutes from "./routes/projectManagerEmailRoutes.js";
+import teamLeaderEmailRoutes from "./routes/teamLeaderEmailRoutes.js";
+import teamMemberEmailRoutes from "./routes/teamMemberEmailRoutes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '../../.env') });
 
 // Initialize database connection
 let dbConnection;
@@ -25,46 +32,69 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration with improved error handling
+// CORS Configuration - Simple and direct
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'http://localhost:5173', // Specific origin for credentials
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 600 // Cache preflight requests for 10 minutes
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
 }));
 
-// Add security headers and improved error handling
+// Add security headers
 app.use((req, res, next) => {
-  // Remove problematic headers
-  res.removeHeader('Connection');
-  
-  // Set security and caching headers
-  res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  
   next();
 });
 
 // Add compression middleware
 app.use(compression());
 
-// Handle preflight requests
-app.options('*', cors());
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`, {
+    body: req.body,
+    query: req.query,
+    params: req.params
+  });
+  next();
+});
 
-app.use(express.json());
+// Parse JSON payloads
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
-// Mount routes
+// Parse URL-encoded bodies
+app.use(express.urlencoded({ 
+  extended: true,
+  limit: '50mb'
+}));
+
+// Mount all routes
 app.use("/api/auth", authRoutes);
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/logs", logsRoutes);
+app.use("/api/sheets", sheetRoutes);
+app.use("/api/pm-email", projectManagerEmailRoutes);
+app.use("/api/tl-email", teamLeaderEmailRoutes);
+app.use("/api/tm-email", teamMemberEmailRoutes);
+
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
+  
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
   
   // Handle specific types of errors
   if (err.name === 'ValidationError') {
@@ -103,4 +133,61 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+let server;
+
+// Function to gracefully shutdown the server
+const shutdownGracefully = () => {
+  console.log('\nInitiating graceful shutdown...');
+  if (server) {
+    server.close(() => {
+      console.log('Server closed');
+      if (mongoose.connection.readyState === 1) {
+        mongoose.connection.close(false, () => {
+          console.log('Database connection closed');
+          process.exit(0);
+        });
+      } else {
+        process.exit(0);
+      }
+    });
+
+    // Force shutdown after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  }
+};
+
+// Handle process signals for graceful shutdown
+process.on('SIGTERM', shutdownGracefully);
+process.on('SIGINT', shutdownGracefully);
+
+// Start the server with error handling
+const startServer = () => {
+  try {
+    server = app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`⚠️ Port ${PORT} is already in use`);
+        console.log('Attempting to find another port...');
+        const newPort = PORT + 1;
+        console.log(`Trying port ${newPort}...`);
+        server = app.listen(newPort, () => {
+          console.log(`🚀 Server running on alternate port ${newPort}`);
+        });
+      } else {
+        console.error('Server error:', error);
+        process.exit(1);
+      }
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

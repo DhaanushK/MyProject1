@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { getGoogleAuth } from './googleAuth.js';
+import { sheets } from './googleSheets.js';
 import User from '../models/User.js';
 
 class ProjectManagerEmailService {
@@ -9,7 +9,7 @@ class ProjectManagerEmailService {
 
   async initialize() {
     try {
-      const auth = await getGoogleAuth();
+      const auth = sheets.auth;
       this.gmail = google.gmail({ version: 'v1', auth });
       console.log('✅ Project Manager Gmail service initialized');
     } catch (error) {
@@ -503,7 +503,8 @@ class ProjectManagerEmailService {
       other: 0
     };
 
-    recentMessages.forEach(email => {
+    for (let i = 0; i < recentMessages.length; i++) {
+      const email = recentMessages[i];
       const subject = email.subject.toLowerCase();
       if (subject.includes('urgent') || subject.includes('alert')) {
         emailTypes.alerts++;
@@ -516,7 +517,7 @@ class ProjectManagerEmailService {
       } else {
         emailTypes.other++;
       }
-    });
+    }
 
     return emailTypes;
   }

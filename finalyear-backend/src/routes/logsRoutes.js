@@ -77,11 +77,12 @@ router.get(
       const uniqueUsers = [...new Set(logs.map(log => log.Name))];
       
       // Get logs by role
-      const roleStats = logs.reduce((acc, log) => {
+      const roleStats = {};
+      for (let i = 0; i < logs.length; i++) {
+        const log = logs[i];
         const role = log.Role || 'Unknown';
-        acc[role] = (acc[role] || 0) + 1;
-        return acc;
-      }, {});
+        roleStats[role] = (roleStats[role] || 0) + 1;
+      }
       
       // Get recent activity (last 7 days)
       const sevenDaysAgo = new Date();

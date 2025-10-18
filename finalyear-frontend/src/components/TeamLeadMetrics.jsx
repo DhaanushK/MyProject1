@@ -93,10 +93,19 @@ export default function TeamLeadMetrics() {
       };
     }
 
-    const totalTasks = metrics.reduce((sum, m) => sum + (m.totalTasks || 0), 0);
-    const completedTasks = metrics.reduce((sum, m) => sum + (m.completed || 0), 0);
+    // Use simple for loop
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let lateTasks = 0;
+    
+    for (let i = 0; i < metrics.length; i++) {
+      const m = metrics[i];
+      totalTasks += m.totalTasks || 0;
+      completedTasks += m.completed || 0;
+      lateTasks += m.late || 0;
+    }
+    
     const pendingTasks = totalTasks - completedTasks;
-    const lateTasks = metrics.reduce((sum, m) => sum + (m.late || 0), 0);
     
     return {
       totalTasks,
@@ -235,7 +244,7 @@ export default function TeamLeadMetrics() {
       }}>
         <h3 style={{ margin: "0 0 20px 0", color: "#333" }}>Whole Team's Metrics</h3>
         <iframe
-          src="https://docs.google.com/spreadsheets/d/1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80/edit?usp=sharing"
+          src={`https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_GOOGLE_SPREADSHEET_ID || 'YOUR_SPREADSHEET_ID'}/edit?usp=sharing`}
           width="100%"
           height="600px"
           style={{ 

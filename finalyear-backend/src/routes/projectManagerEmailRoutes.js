@@ -27,14 +27,22 @@ router.post('/send-team-report',
   async (req, res) => {
     try {
       // Get all team metrics data
-      const allMetrics = await getAllTeamMetricsData(process.env.SPREADSHEET_ID);
+      const teamData = await getAllTeamMetricsData(process.env.SPREADSHEET_ID);
       
       // Calculate aggregated KPIs
       const calculateKPIs = (data) => {
-        const totalTasks = data.reduce((sum, d) => sum + d.totalTasks, 0);
-        const completedTasks = data.reduce((sum, d) => sum + d.completed, 0);
-        const pendingTasks = data.reduce((sum, d) => sum + d.pending, 0);
-        const lateTasks = data.reduce((sum, d) => sum + d.late, 0);
+        let totalTasks = 0;
+        let completedTasks = 0;
+        let pendingTasks = 0;
+        let lateTasks = 0;
+        
+        for (let i = 0; i < data.length; i++) {
+          const d = data[i];
+          totalTasks += d.totalTasks;
+          completedTasks += d.completed;
+          pendingTasks += d.pending;
+          lateTasks += d.late;
+        }
         
         return {
           totalTasks,
@@ -45,23 +53,30 @@ router.post('/send-team-report',
         };
       };
 
-      const aggregatedKPIs = calculateKPIs(allMetrics);
-
-      // Group metrics by user for individual analysis
-      const userMetrics = {};
-      allMetrics.forEach(metric => {
-        const userName = metric.sheetName || metric.name;
-        if (!userMetrics[userName]) {
-          userMetrics[userName] = [];
+      // Extract data from teamData object
+      const allMetrics = [];
+      const userMetrics = teamData.userMetrics || {};
+      
+      // Flatten all metrics into single array
+      for (const userName in userMetrics) {
+        if (Array.isArray(userMetrics[userName])) {
+          for (let i = 0; i < userMetrics[userName].length; i++) {
+            allMetrics.push(userMetrics[userName][i]);
+          }
         }
-        userMetrics[userName].push(metric);
-      });
+      }
 
-      // Calculate individual user KPIs
-      const individualKPIs = {};
-      Object.keys(userMetrics).forEach(userName => {
-        individualKPIs[userName] = calculateKPIs(userMetrics[userName]);
-      });
+      const aggregatedKPIs = teamData.aggregatedKPIs || calculateKPIs(allMetrics);
+
+      // Individual KPIs are already calculated in teamData
+      const individualKPIs = teamData.individualKPIs || {};
+
+      // If individualKPIs is empty, calculate them
+      if (Object.keys(individualKPIs).length === 0) {
+        for (const userName in userMetrics) {
+          individualKPIs[userName] = calculateKPIs(userMetrics[userName]);
+        }
+      }
 
       const teamMetricsData = {
         aggregatedKPIs,

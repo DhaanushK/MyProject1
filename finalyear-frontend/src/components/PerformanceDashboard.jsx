@@ -74,7 +74,8 @@ export default function PerformanceDashboard() {
     const allMetrics = Object.values(userMetrics).flat();
     
     // Sort by date and group into weeks
-    allMetrics.forEach(metric => {
+    for (let i = 0; i < allMetrics.length; i++) {
+      const metric = allMetrics[i];
       if (metric.date) {
         const date = new Date(metric.date);
         const weekNumber = Math.floor((Date.now() - date.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
@@ -85,7 +86,7 @@ export default function PerformanceDashboard() {
         }
         weeks[weekKey] += metric.completed;
       }
-    });
+    }
 
     // Convert to array format for chart
     return Object.keys(weeks).map(week => ({

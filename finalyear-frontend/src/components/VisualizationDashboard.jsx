@@ -66,13 +66,16 @@ export default function VisualizationDashboard() {
   const processWeeklyMetrics = () => {
     if (!Array.isArray(metrics) || metrics.length === 0) return [];
 
-    const weeklyData = metrics.reduce((acc, metric) => {
+    const weeklyData = {};
+    
+    for (let i = 0; i < metrics.length; i++) {
+      const metric = metrics[i];
       const date = new Date(metric.date);
       const weekNumber = Math.ceil((date.getDate()) / 7);
       const weekKey = `Week ${weekNumber}`;
       
-      if (!acc[weekKey]) {
-        acc[weekKey] = {
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {
           week: weekKey,
           assigned: 0,
           resolved: 0,
@@ -82,16 +85,18 @@ export default function VisualizationDashboard() {
         };
       }
 
-      acc[weekKey].assigned += metric.totalTasks;
-      acc[weekKey].resolved += metric.completed;
-      acc[weekKey].slaBreaches += metric.late;
-      acc[weekKey].interactions += metric.interactions;
-      acc[weekKey].responsiveness = (metric.completed / metric.totalTasks) * 100 || 0;
+      weeklyData[weekKey].assigned += metric.totalTasks;
+      weeklyData[weekKey].resolved += metric.completed;
+      weeklyData[weekKey].slaBreaches += metric.late;
+      weeklyData[weekKey].interactions += metric.interactions;
+      weeklyData[weekKey].responsiveness = (metric.completed / metric.totalTasks) * 100 || 0;
+    }
 
-      return acc;
-    }, {});
-
-    return Object.values(weeklyData);
+    const result = [];
+    for (const key in weeklyData) {
+      result.push(weeklyData[key]);
+    }
+    return result;
   };
 
   // Process daily heatmap data
@@ -99,39 +104,46 @@ export default function VisualizationDashboard() {
     if (!Array.isArray(metrics) || metrics.length === 0) return [];
 
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const heatmapData = metrics.reduce((acc, metric) => {
+    const heatmapData = {};
+    
+    for (let i = 0; i < metrics.length; i++) {
+      const metric = metrics[i];
       const date = new Date(metric.date);
       const dayOfWeek = daysOfWeek[date.getDay()];
       
-      if (!acc[dayOfWeek]) {
-        acc[dayOfWeek] = {
+      if (!heatmapData[dayOfWeek]) {
+        heatmapData[dayOfWeek] = {
           day: dayOfWeek,
           slaBreaches: 0,
           totalTasks: 0
         };
       }
 
-      acc[dayOfWeek].slaBreaches += metric.late;
-      acc[dayOfWeek].totalTasks += metric.totalTasks;
-      acc[dayOfWeek].breachRate = (acc[dayOfWeek].slaBreaches / acc[dayOfWeek].totalTasks) * 100;
+      heatmapData[dayOfWeek].slaBreaches += metric.late;
+      heatmapData[dayOfWeek].totalTasks += metric.totalTasks;
+      heatmapData[dayOfWeek].breachRate = (heatmapData[dayOfWeek].slaBreaches / heatmapData[dayOfWeek].totalTasks) * 100;
+    }
 
-      return acc;
-    }, {});
-
-    return Object.values(heatmapData);
+    const result = [];
+    for (const key in heatmapData) {
+      result.push(heatmapData[key]);
+    }
+    return result;
   };
 
   // Process radar chart data
   const processRadarData = () => {
     if (!Array.isArray(metrics) || metrics.length === 0) return [];
 
-    const totalMetrics = metrics.reduce((acc, metric) => {
-      acc.totalAssigned += metric.totalTasks;
-      acc.totalResolved += metric.completed;
-      acc.totalSLABreaches += metric.late;
-      acc.totalInteractions += metric.interactions;
-      return acc;
-    }, { totalAssigned: 0, totalResolved: 0, totalSLABreaches: 0, totalInteractions: 0 });
+    const totalMetrics = { totalAssigned: 0, totalResolved: 0, totalSLABreaches: 0, totalInteractions: 0 };
+    
+    for (let i = 0; i < metrics.length; i++) {
+      const metric = metrics[i];
+      totalMetrics.totalAssigned += metric.totalTasks;
+      totalMetrics.totalResolved += metric.completed;
+      totalMetrics.totalSLABreaches += metric.late;
+      totalMetrics.totalInteractions += metric.interactions;
+    }
 
     return [
       {

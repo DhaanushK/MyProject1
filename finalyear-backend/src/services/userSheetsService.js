@@ -1,15 +1,4 @@
-import { google } from "googleapis";
-import { getGoogleAuth } from './googleAuth.js';
-
-let sheets = null;
-
-async function getSheets() {
-  if (!sheets) {
-    const auth = await getGoogleAuth();
-    sheets = google.sheets({ version: "v4", auth });
-  }
-  return sheets;
-}
+import { sheets } from './googleSheets.js';
 
 // Cache metrics data for 5 minutes
 let metricsCache = {
@@ -42,25 +31,26 @@ export async function getAllTeamMetricsData(sheetId) {
       throw new Error('Spreadsheet ID is required');
     }
 
-    const sheets = await getSheets();
-
     // Race between the sheets operation and timeout
-    const spreadsheet = await Promise.race([
-      sheets.spreadsheets.get({
-        spreadsheetId: sheetId,
-      }),
-      timeout
-    ]).catch(error => {
+    let spreadsheet;
+    try {
+      spreadsheet = await Promise.race([
+        sheets.spreadsheets.get({
+          spreadsheetId: sheetId,
+        }),
+        timeout
+      ]);
+    } catch (error) {
       console.error('Error getting spreadsheet:', error);
       if (error.message === 'Google Sheets operation timed out') {
         // Return cached data if available, even if expired
         if (metricsCache.data) {
           console.log('Returning expired cache data due to timeout');
-          return { data: metricsCache.data };
+          return metricsCache.data;
         }
       }
       throw new Error(`Failed to access spreadsheet: ${error.message}`);
-    });
+    }
 
     if (!spreadsheet.data || !spreadsheet.data.sheets) {
       throw new Error('Invalid spreadsheet structure');
@@ -83,8 +73,7 @@ export async function getAllTeamMetricsData(sheetId) {
     for (const userSheet of allUserSheets) {
       try {
         console.log(`Fetching data from sheet: ${userSheet.properties.title}`);
-        const sheetsApi = await getSheets();
-        const res = await sheetsApi.spreadsheets.values.get({
+        const res = await sheets.spreadsheets.values.get({
           spreadsheetId: sheetId,
           range: `${userSheet.properties.title}!A2:I`,
         });
@@ -129,17 +118,88 @@ export async function getAllTeamMetricsData(sheetId) {
     }
 
     console.log(`Total metrics collected: ${allMetrics.length}`);
-    console.log('Metrics by sheet name:', allMetrics.reduce((acc, metric) => {
-      acc[metric.sheetName] = (acc[metric.sheetName] || 0) + 1;
-      return acc;
-    }, {}));
+    
+    // Simple count by sheet name using for loop
+    const sheetCounts = {};
+    for (let i = 0; i < allMetrics.length; i++) {
+      const metric = allMetrics[i];
+      sheetCounts[metric.sheetName] = (sheetCounts[metric.sheetName] || 0) + 1;
+    }
+    console.log('Metrics by sheet name:', sheetCounts);
 
-    // Update cache with the fresh data
-    metricsCache.data = allMetrics;
+    // Process and format the data
+    const teamData = {
+      totalMetrics: allMetrics.length,
+      teamMembers: [...new Set(allMetrics.map(metric => metric.sheetName))],
+      userMetrics: {},
+      individualKPIs: {}
+    };
+
+    // Group metrics by team member using for loop
+    for (let i = 0; i < allMetrics.length; i++) {
+      const metric = allMetrics[i];
+      const memberName = metric.sheetName;
+      
+      if (!teamData.userMetrics[memberName]) {
+        teamData.userMetrics[memberName] = [];
+      }
+      teamData.userMetrics[memberName].push(metric);
+
+      // Calculate individual KPIs
+      if (!teamData.individualKPIs[memberName]) {
+        teamData.individualKPIs[memberName] = {
+          totalTasks: 0,
+          completed: 0,
+          pending: 0,
+          late: 0,
+          clientInteractions: 0
+        };
+      }
+
+      const kpi = teamData.individualKPIs[memberName];
+      kpi.totalTasks += metric.totalTasks || 0;
+      kpi.completed += metric.completed || 0;
+      kpi.pending += metric.pending || 0;
+      kpi.late += metric.late || 0;
+      kpi.clientInteractions += metric.clientInteractions || 0;
+    }
+
+    // Calculate aggregated KPIs using simple loop instead of reduce
+    const aggregatedKPIs = {
+      totalTasks: 0,
+      completedTasks: 0,
+      pendingTasks: 0,
+      lateTasks: 0,
+      totalClientInteractions: 0
+    };
+
+    // Simple loop to avoid reduce() errors
+    for (const memberName in teamData.individualKPIs) {
+      const kpi = teamData.individualKPIs[memberName];
+      aggregatedKPIs.totalTasks += kpi.totalTasks || 0;
+      aggregatedKPIs.completedTasks += kpi.completed || 0;
+      aggregatedKPIs.pendingTasks += kpi.pending || 0;
+      aggregatedKPIs.lateTasks += kpi.late || 0;
+      aggregatedKPIs.totalClientInteractions += kpi.clientInteractions || 0;
+    }
+
+    // Add derived KPIs
+    aggregatedKPIs.completionRate = Math.round((aggregatedKPIs.completedTasks / aggregatedKPIs.totalTasks) * 100);
+    aggregatedKPIs.efficiency = parseFloat((aggregatedKPIs.completedTasks / (aggregatedKPIs.totalTasks - aggregatedKPIs.pendingTasks)).toFixed(2));
+
+    teamData.aggregatedKPIs = aggregatedKPIs;
+
+    // Update cache with the processed data
+    metricsCache.data = teamData;
     metricsCache.timestamp = Date.now();
     console.log('Updated metrics cache');
 
-    return allMetrics;
+    console.log('=== RETURNING TEAM DATA ===');
+    console.log('Type:', typeof teamData);
+    console.log('Keys:', Object.keys(teamData));
+    console.log('individualKPIs keys:', Object.keys(teamData.individualKPIs || {}));
+    
+    return teamData;
   } catch (error) {
     console.error("Error fetching all team metrics:", error);
     throw error;
@@ -158,8 +218,6 @@ export async function getUserMetricsData(sheetId, userName) {
     if (!userName) {
       throw new Error('User name is required');
     }
-
-    const sheets = await getSheets();
 
     // First get all sheets in the spreadsheet
     console.log('Attempting to access spreadsheet with ID:', sheetId);
@@ -223,8 +281,7 @@ export async function getUserMetricsData(sheetId, userName) {
     
     console.log(`Found sheet: ${userSheet.properties.title} for user: ${userName}`);
 
-    const sheetsApi = await getSheets();
-    const res = await sheetsApi.spreadsheets.values.get({
+    const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: `${userSheet.properties.title}!A2:I`,
     });

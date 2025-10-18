@@ -8,9 +8,12 @@ const instance = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache'
+    'Accept': 'application/json'
+  },
+  // Retry configuration
+  retry: 3,
+  retryDelay: (retryCount) => {
+    return retryCount * 2000; // Time interval between retries
   }
 });
 

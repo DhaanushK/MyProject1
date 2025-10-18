@@ -62,10 +62,19 @@ export default function IndividualDashboard() {
       };
     }
 
-    const totalTasks = metrics.reduce((sum, m) => sum + (m.totalTasks || 0), 0);
-    const completedTasks = metrics.reduce((sum, m) => sum + (m.completed || 0), 0);
+    // Use simple for loop
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let lateTasks = 0;
+    
+    for (let i = 0; i < metrics.length; i++) {
+      const m = metrics[i];
+      totalTasks += m.totalTasks || 0;
+      completedTasks += m.completed || 0;
+      lateTasks += m.late || 0;
+    }
+    
     const pendingTasks = totalTasks - completedTasks;
-    const lateTasks = metrics.reduce((sum, m) => sum + (m.late || 0), 0);
     
     return {
       totalTasks,
@@ -83,19 +92,20 @@ export default function IndividualDashboard() {
     { name: "Pending", value: metricsData.pendingTasks }
   ];
 
-  // Prepare weekly data
-  const weeklyData = metrics.reduce((acc, metric) => {
+  // Prepare weekly data using simple for loop
+  const weeklyData = {};
+  for (let i = 0; i < metrics.length; i++) {
+    const metric = metrics[i];
     const date = new Date(metric.date);
     const weekNumber = Math.ceil((date.getDate()) / 7);
     const weekKey = `Week ${weekNumber}`;
     
-    if (!acc[weekKey]) {
-      acc[weekKey] = { completed: 0, total: 0 };
+    if (!weeklyData[weekKey]) {
+      weeklyData[weekKey] = { completed: 0, total: 0 };
     }
-    acc[weekKey].completed += metric.completed;
-    acc[weekKey].total += metric.totalTasks;
-    return acc;
-  }, {});
+    weeklyData[weekKey].completed += metric.completed;
+    weeklyData[weekKey].total += metric.totalTasks;
+  }
 
   const weeklyChartData = Object.entries(weeklyData).map(([week, data]) => ({
     week,

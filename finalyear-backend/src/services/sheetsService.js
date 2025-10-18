@@ -1,18 +1,10 @@
-import { google } from "googleapis";
-import { getGoogleAuth } from './googleAuth.js';
+import { sheets } from './googleSheets.js';
 
-// Initialize Google Sheets API client
-const initializeSheets = async () => {
-  const auth = await getGoogleAuth();
-  return google.sheets({ version: "v4", auth });
-};
-
-// Replace with your sheet ID
-const SHEET_ID = "1vl5gTB6OkLVSvYvnCfLwHW_FyjKUinkiKxav-5zaA80";
+// Use environment variable for sheet ID
+const SHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 
 export async function getMetricsData() {
   try {
-    const sheets = await initializeSheets();
     
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
