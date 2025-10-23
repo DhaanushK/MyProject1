@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "postinstall": "npm run platform-specific-install",
+    "platform-specific-install": "node -e \"if (process.platform === 'linux') { require('child_process').execSync('npm install @rollup/rollup-linux-x64-gnu@4.50.0') }\""
   },
   "keywords": [],
   "author": "",
