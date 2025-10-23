@@ -9,7 +9,7 @@ const instance = axios.create({
   timeout: 60000, // 60 seconds timeout
   maxContentLength: 50 * 1024 * 1024, // 50MB
   maxBodyLength: 50 * 1024 * 1024, // 50MB
-  withCredentials: true, // Enable CORS credentials
+  withCredentials: false, // Disable CORS credentials for now
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
