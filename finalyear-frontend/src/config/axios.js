@@ -1,12 +1,15 @@
 import axios from 'axios';
 
-// Axios will use the proxy configuration from vite.config.js
+// Use the environment-specific API URL
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+console.log('Using API URL:', baseURL);
+
 const instance = axios.create({
-  // No baseURL needed as we're using Vite's proxy
+  baseURL,
   timeout: 60000, // 60 seconds timeout
   maxContentLength: 50 * 1024 * 1024, // 50MB
   maxBodyLength: 50 * 1024 * 1024, // 50MB
-  withCredentials: true, // Enable for local development
+  withCredentials: true, // Enable CORS credentials
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
