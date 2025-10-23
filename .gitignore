@@ -36,3 +36,6 @@ Thumbs.db
 finalyear-backend/production.env
 finalyear-frontend/public/privacy-policy.html
 finalyear-frontend/public/terms-of-service.html
+
+.vercel
+finalyear-frontend/.env.production

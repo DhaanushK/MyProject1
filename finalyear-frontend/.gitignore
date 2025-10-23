@@ -34,3 +34,5 @@ google-credentials.json
 # Authentication tokens
 *.token
 auth.config.js
+
+.vercel
