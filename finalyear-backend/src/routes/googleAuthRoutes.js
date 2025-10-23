@@ -1,6 +1,30 @@
 import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
+import { google } from 'googleapis';
+import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middleware/auth.js';
+
+// Helper function to determine user role
+function determineUserRole(email) {
+  // Project Manager
+  if (email === process.env.EMAIL_USER) {
+    return 'project_manager';
+  }
+  // Team Leads
+  if (email === process.env.TL1_EMAIL || email === process.env.TL2_EMAIL) {
+    return 'team_lead';
+  }
+  // Team Members
+  if ([
+    process.env.TM1_EMAIL,
+    process.env.TM2_EMAIL,
+    process.env.TM3_EMAIL,
+    process.env.TM4_EMAIL
+  ].includes(email)) {
+    return 'team_member';
+  }
+  return 'team_member'; // Default role
+}
 
 const router = express.Router();
 
@@ -12,18 +36,19 @@ const oauth2Client = new OAuth2Client({
 });
 
 // Generate OAuth2 URL
-router.get('/auth/google', authMiddleware, (req, res) => {
+router.get('/auth/google', (req, res) => {
   const scopes = [
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.modify'
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email'
   ];
 
   const authorizeUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    prompt: 'consent',
-    state: req.user.email // Pass user email as state to verify on callback
+    prompt: 'consent'
   });
 
   res.json({ 
@@ -43,13 +68,33 @@ router.get('/google-callback', async (req, res) => {
 
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
-    
-    // Store tokens securely (you'll need to implement this)
-    // For now, we'll just send them back to be stored in frontend
+    oauth2Client.setCredentials(tokens);
+
+    // Get user info from Google
+    const { data } = await google.oauth2('v2').userinfo.get({
+      auth: oauth2Client
+    });
+
+    // Create or update user in your database
+    const user = {
+      email: data.email,
+      name: data.name,
+      role: determineUserRole(data.email) // You'll need to implement this function
+    };
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     res.json({
       success: true,
-      email: state, // This is the user's email we passed in state
-      tokens
+      token,
+      email: user.email,
+      role: user.role,
+      username: user.name
     });
 
   } catch (error) {
