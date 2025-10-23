@@ -48,8 +48,9 @@ app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
     if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+      return callback(null, false);
     }
     return callback(null, true);
   },
@@ -102,7 +103,7 @@ app.use("/api/tl-email", teamLeaderEmailRoutes);
 app.use("/api/tm-email", teamMemberEmailRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/auth", googleAuthRoutes);
+app.use("/api", googleAuthRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
