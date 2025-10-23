@@ -35,10 +35,10 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration with specific origin
+// CORS Configuration with specific origins
 app.use(cors({
-  origin: 'https://my-project1-wine.vercel.app',
-  credentials: true,
+  origin: ['https://my-project1-wine.vercel.app', 'https://team-metrics-dashboard-production.up.railway.app'],
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type']
@@ -46,6 +46,13 @@ app.use(cors({
 
 // Pre-flight requests
 app.options('*', cors());
+
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
+});
 
 // Add security headers
 app.use((req, res, next) => {
