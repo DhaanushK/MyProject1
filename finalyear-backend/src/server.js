@@ -134,7 +134,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Railway automatically sets process.env.PORT
+// In development, we'll use 5001 as a fallback
 const PORT = process.env.PORT || 5001;
+console.log(`PORT environment variable: ${process.env.PORT}`);
 let server;
 
 // Function to gracefully shutdown the server
