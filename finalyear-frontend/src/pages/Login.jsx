@@ -7,7 +7,7 @@ function Login() {
   const handleGoogleLogin = async () => {
     try {
       // Get the OAuth URL from backend
-      const res = await axios.get("/api/auth/google");
+      const res = await axios.get("/api/auth/google/signin");
       
       if (!res.data?.authUrl) {
         throw new Error('Invalid response from auth endpoint');
