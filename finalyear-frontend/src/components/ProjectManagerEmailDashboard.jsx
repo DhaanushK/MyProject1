@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
 
+import EmailBox from './EmailBox';
+
 export default function ProjectManagerEmailDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [emailAnalytics, setEmailAnalytics] = useState(null);
@@ -8,6 +10,30 @@ export default function ProjectManagerEmailDashboard() {
   const [connectionStatus, setConnectionStatus] = useState('checking');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('email') || '');
+
+  // Initialize user data from local storage
+  useEffect(() => {
+    try {
+      const email = localStorage.getItem('email');
+      const role = localStorage.getItem('role');
+      const token = localStorage.getItem('token');
+      
+      if (!email || !role || !token) {
+        throw new Error('Missing user data');
+      }
+      
+      if (role !== 'project_manager') {
+        throw new Error('Invalid role for this dashboard');
+      }
+      
+      setUserEmail(email);
+      setMessage(''); // Clear any error messages
+    } catch (error) {
+      console.error('User data validation failed:', error);
+      setMessage('❌ User email not found. Please log in again.');
+    }
+  }, []);
 
   // Form states
   const [feedbackForm, setFeedbackForm] = useState({
@@ -128,7 +154,7 @@ export default function ProjectManagerEmailDashboard() {
         timeout: 30000 // 30 second timeout for urgent alerts
       });
       
-      setMessage(`🚨 Urgent alert sent successfully to ${response.data.results.length} recipients`);
+      setMessage(`🚨 Urgent alert sent successfully to ${alertForm.recipients === 'all' ? 'all team members' : '1 recipient'}`);
       setAlertForm({
         subject: '',
         message: '',
@@ -177,6 +203,15 @@ export default function ProjectManagerEmailDashboard() {
         ? prev.missingSubmissions.filter(s => s.email !== member.email)
         : [...prev.missingSubmissions, { name: member.name, email: member.email }]
     }));
+  };
+
+  const renderEmailBox = () => {
+    console.log('Rendering EmailBox with email:', userEmail); // Debug log
+    return (
+      <div className="email-box-container">
+        <EmailBox role="project_manager" userEmail={userEmail} key={userEmail} />
+      </div>
+    );
   };
 
   const renderConnectionStatus = () => (
@@ -268,6 +303,12 @@ export default function ProjectManagerEmailDashboard() {
           onClick={() => setActiveTab('overview')}
         >
           📊 Overview
+        </button>
+        <button 
+          className={activeTab === 'mailbox' ? 'active' : ''}
+          onClick={() => setActiveTab('mailbox')}
+        >
+          📬 Mailbox
         </button>
         <button 
           className={activeTab === 'reports' ? 'active' : ''}
@@ -570,6 +611,45 @@ export default function ProjectManagerEmailDashboard() {
           </div>
         )}
 
+        {activeTab === 'mailbox' && (
+          <div className="mailbox-section">
+            {userEmail ? (
+              renderEmailBox()
+            ) : (
+              <div className="error-message" style={{
+                margin: '20px',
+                padding: '20px',
+                backgroundColor: '#ffebee',
+                border: '1px solid #ffcdd2',
+                borderRadius: '4px',
+                color: '#c62828',
+                textAlign: 'center'
+              }}>
+                <h4 style={{ marginTop: 0 }}>Email Access Error</h4>
+                <p>Unable to access your emails. This could be because:</p>
+                <ul style={{ textAlign: 'left', marginBottom: '15px' }}>
+                  <li>Your session has expired</li>
+                  <li>You need to log in again</li>
+                  <li>There's an issue with your account permissions</li>
+                </ul>
+                <button 
+                  onClick={() => window.location.reload()}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Refresh Page
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        
         {activeTab === 'reminders' && (
           <div className="reminders-section">
             <h3>📋 Send Metrics Submission Reminders</h3>

@@ -13,6 +13,9 @@ import sheetRoutes from "./routes/sheetRoutes.js";
 import projectManagerEmailRoutes from "./routes/projectManagerEmailRoutes.js";
 import teamLeaderEmailRoutes from "./routes/teamLeaderEmailRoutes.js";
 import teamMemberEmailRoutes from "./routes/teamMemberEmailRoutes.js";
+import emailRoutes from "./routes/emailRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,11 +35,11 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration - Simple and direct
+// CORS Configuration - Allow multiple dev ports
 app.use(cors({
-  origin: 'http://localhost:5173', // Specific origin for credentials
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type']
 }));
@@ -82,6 +85,9 @@ app.use("/api/sheets", sheetRoutes);
 app.use("/api/pm-email", projectManagerEmailRoutes);
 app.use("/api/tl-email", teamLeaderEmailRoutes);
 app.use("/api/tm-email", teamMemberEmailRoutes);
+app.use("/api/emails", emailRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api", googleAuthRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
@@ -112,26 +118,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  // Perform cleanup and exit gracefully
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Perform cleanup and exit gracefully
-  process.exit(1);
-});
-app.use("/api/pm-email", projectManagerEmailRoutes); // ✅ New PM email routes
-app.use("/api/tl-email", teamLeaderEmailRoutes); // ✅ Team Leader email routes
-app.use("/api/tm-email", teamMemberEmailRoutes); // ✅ Team Member email routes
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
 const PORT = process.env.PORT || 5001;
 let server;
 
@@ -158,10 +144,6 @@ const shutdownGracefully = () => {
     }, 10000);
   }
 };
-
-// Handle process signals for graceful shutdown
-process.on('SIGTERM', shutdownGracefully);
-process.on('SIGINT', shutdownGracefully);
 
 // Start the server with error handling
 const startServer = () => {

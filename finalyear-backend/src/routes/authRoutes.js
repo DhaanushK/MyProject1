@@ -2,6 +2,7 @@ import express from "express";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -51,19 +52,52 @@ router.post("/login", async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
+    // Validate user object
+    if (!user || !user._id) {
+      console.error('Invalid user object:', user);
+      return res.status(500).json({ message: "User data corrupted" });
+    }
+
+    // Convert user document to plain object and validate required fields
+    const userObj = user.toObject();
+    const requiredFields = ['email', 'role', 'name'];
+    const missingFields = requiredFields.filter(field => !userObj[field]);
+    
+    if (missingFields.length > 0) {
+      console.error('Missing required user fields:', {
+        missing: missingFields,
+        user: userObj
+      });
+      return res.status(500).json({ 
+        message: `Incomplete user data: missing ${missingFields.join(', ')}` 
+      });
+    }
+
+    // Create token payload with all necessary user data
+    const tokenPayload = {
+      id: user._id.toString(),
+      email: userObj.email,    // Explicitly include email
+      role: userObj.role,      // Explicitly include role
+      name: userObj.name       // Explicitly include name
+    };
+
+    console.log('Creating token with payload:', tokenPayload);
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      tokenPayload,
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
     console.log('Login successful for user:', email);
-    // 👇 response includes username now
+    console.log('Token created with payload:', tokenPayload);
+    
     res.json({ 
       token, 
       role: user.role, 
       email: user.email, 
-      username: user.name 
+      username: user.name,
+      id: user._id.toString()
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -74,5 +108,46 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Get current user details
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    // Log the decoded token data
+    console.log('Decoded token data:', req.user);
+
+    // Fetch fresh user data from database
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      console.log('User not found in database');
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get user data from the token if database fetch fails
+    const fallbackEmail = req.user.email;
+
+    const userData = {
+      id: user._id,
+      role: user.role,
+      email: user.email || fallbackEmail, // Use email from token if not in DB
+      name: user.name
+    };
+
+    console.log('User data to send:', userData);
+
+    // Validate email presence
+    if (!userData.email) {
+      console.error('No email found in user data or token:', {
+        userDoc: user.toObject(),
+        tokenData: req.user
+      });
+      return res.status(500).json({ message: "User email not found" });
+    }
+
+    console.log('Sending complete user data:', userData);
+    res.json(userData);
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 export default router;

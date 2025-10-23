@@ -6,15 +6,13 @@ let metricsCache = {
   timestamp: null
 };
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-export async function getAllTeamMetricsData(sheetId) {
+export async function getAllTeamMetricsData(sheetId, forceRefresh = false) {
   try {
-    console.log('=== getAllTeamMetricsData called ===');
-
-    // Check cache first
-    const now = Date.now();
-    if (metricsCache.data && metricsCache.timestamp && (now - metricsCache.timestamp < CACHE_DURATION)) {
+    // Check cache first (5 minute TTL) unless force refresh
+    const cacheAge = Date.now() - metricsCache.timestamp;
+    if (!forceRefresh && metricsCache.data && cacheAge < CACHE_TTL) {
       console.log('Returning cached metrics data');
       return metricsCache.data;
     }
@@ -149,19 +147,29 @@ export async function getAllTeamMetricsData(sheetId) {
       if (!teamData.individualKPIs[memberName]) {
         teamData.individualKPIs[memberName] = {
           totalTasks: 0,
-          completed: 0,
-          pending: 0,
-          late: 0,
-          clientInteractions: 0
+          completedTasks: 0,
+          pendingTasks: 0,
+          lateTasks: 0,
+          totalClientInteractions: 0,
+          completionRate: 0,
+          efficiency: 0
         };
       }
 
       const kpi = teamData.individualKPIs[memberName];
       kpi.totalTasks += metric.totalTasks || 0;
-      kpi.completed += metric.completed || 0;
-      kpi.pending += metric.pending || 0;
-      kpi.late += metric.late || 0;
-      kpi.clientInteractions += metric.clientInteractions || 0;
+      kpi.completedTasks += metric.completed || 0;
+      kpi.pendingTasks += metric.pending || 0;
+      kpi.lateTasks += metric.late || 0;
+      kpi.totalClientInteractions += metric.interactions || 0;
+    }
+
+    // Calculate individual completion rates and efficiency for each member
+    for (const memberName in teamData.individualKPIs) {
+      const kpi = teamData.individualKPIs[memberName];
+      kpi.completionRate = kpi.totalTasks > 0 ? Math.round((kpi.completedTasks / kpi.totalTasks) * 100) : 0;
+      kpi.efficiency = (kpi.totalTasks - kpi.pendingTasks) > 0 ? 
+        parseFloat((kpi.completedTasks / (kpi.totalTasks - kpi.pendingTasks)).toFixed(2)) : 0;
     }
 
     // Calculate aggregated KPIs using simple loop instead of reduce
@@ -177,10 +185,10 @@ export async function getAllTeamMetricsData(sheetId) {
     for (const memberName in teamData.individualKPIs) {
       const kpi = teamData.individualKPIs[memberName];
       aggregatedKPIs.totalTasks += kpi.totalTasks || 0;
-      aggregatedKPIs.completedTasks += kpi.completed || 0;
-      aggregatedKPIs.pendingTasks += kpi.pending || 0;
-      aggregatedKPIs.lateTasks += kpi.late || 0;
-      aggregatedKPIs.totalClientInteractions += kpi.clientInteractions || 0;
+      aggregatedKPIs.completedTasks += kpi.completedTasks || 0;
+      aggregatedKPIs.pendingTasks += kpi.pendingTasks || 0;
+      aggregatedKPIs.lateTasks += kpi.lateTasks || 0;
+      aggregatedKPIs.totalClientInteractions += kpi.totalClientInteractions || 0;
     }
 
     // Add derived KPIs

@@ -12,6 +12,7 @@ export default function TopBar({ title, activeTab, setActiveTab, userRole }) {
       return [
         ...commonTabs,
         { id: 'performance', label: 'Performance Analysis' },
+        { id: 'sheets', label: 'Google Sheets' },
         { id: 'email', label: 'Email Management' },
         { id: 'activity-logs', label: 'Activity Logs' }
       ];
@@ -117,10 +118,13 @@ export default function TopBar({ title, activeTab, setActiveTab, userRole }) {
                 }
               }}
             >
-              {tab.id === 'dashboard' && '🏠 '}
-              {tab.id === 'performance' && '📊 '}
-              {tab.id === 'email' && '📧 '}
-              {tab.id === 'activity-logs' && '📋 '}
+              <i className={`fas fa-${
+                tab.id === 'dashboard' ? 'home' : 
+                tab.id === 'performance' ? 'chart-bar' :
+                tab.id === 'sheets' ? 'file-excel' :
+                tab.id === 'email' ? 'envelope' :
+                tab.id === 'activity-logs' ? 'list-ul' : 'circle'
+              } mr-2`}></i>
               {tab.label}
             </button>
           ))}

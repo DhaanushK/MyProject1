@@ -1,24 +1,13 @@
 import express from 'express';
-import { authMiddleware, authorizeRoles } from '../middleware/auth.js';
-import ProjectManagerEmailService from '../services/projectManagerEmailService.js';
-import SMTPEmailService from '../services/smtpEmailService.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { projectManagerOnly } from '../middleware/roleAuth.js';
+import nodemailerService from '../services/nodemailerService.js';
+import smtpEmailService from '../services/smtpEmailService.js';
+import EmailLog from '../models/EmailLog.js';
+import User from '../models/User.js';
 import { getAllTeamMetricsData } from '../services/userSheetsService.js';
 
 const router = express.Router();
-
-// Middleware to ensure only project managers can access these routes
-const projectManagerOnly = (req, res, next) => {
-  if (
-    req.user.role !== 'project_manager' &&
-    req.user.role !== 'team_lead' &&
-    req.user.role !== 'team_member'
-  ) {
-    return res.status(403).json({ 
-      message: 'Access denied: Project Manager, Team Lead, or Team Member routes only' 
-    });
-  }
-  next();
-};
 
 // Send team performance report
 router.post('/send-team-report',
@@ -87,10 +76,10 @@ router.post('/send-team-report',
       // Try Gmail API first, fallback to SMTP
       let result;
       try {
-        result = await ProjectManagerEmailService.sendTeamPerformanceReport(teamMetricsData);
+        result = await nodemailerService.sendTeamPerformanceReport(teamMetricsData);
       } catch (gmailError) {
         console.log('Gmail API failed, trying SMTP...', gmailError.message);
-        result = await SMTPEmailService.sendTeamPerformanceReport(teamMetricsData);
+        result = await smtpEmailService.sendTeamPerformanceReport(teamMetricsData);
       }
 
       res.json({
@@ -136,7 +125,7 @@ router.post('/send-individual-feedback',
       // Try Gmail API first, fallback to SMTP
       let result;
       try {
-        result = await ProjectManagerEmailService.sendIndividualFeedback({
+        result = await nodemailerService.sendIndividualFeedback({
           recipientEmail,
           recipientName,
           performanceData: performanceData || {},
@@ -144,7 +133,7 @@ router.post('/send-individual-feedback',
         });
       } catch (gmailError) {
         console.log('Gmail API failed, trying SMTP...', gmailError.message);
-        result = await SMTPEmailService.sendIndividualFeedback({
+        result = await smtpEmailService.sendIndividualFeedback({
           recipientEmail,
           recipientName,
           performanceData: performanceData || {},
@@ -170,7 +159,7 @@ router.post('/send-urgent-alert',
   projectManagerOnly,
   async (req, res) => {
     try {
-      const { subject, message, priority, recipients } = req.body;
+      const { subject, message, priority = 'high', recipients = 'all' } = req.body;
 
       if (!subject || !message) {
         return res.status(400).json({
@@ -178,28 +167,52 @@ router.post('/send-urgent-alert',
         });
       }
 
-      // Try Gmail API first, fallback to SMTP
-      let result;
-      try {
-        result = await ProjectManagerEmailService.sendUrgentAlert({
-          subject,
-          message,
-          priority: priority || 'high',
-          recipients: recipients || 'all'
-        });
-      } catch (gmailError) {
-        console.log('Gmail API failed, trying SMTP...', gmailError.message);
-        result = await SMTPEmailService.sendUrgentAlert({
-          subject,
-          message,
-          priority: priority || 'high',
-          recipients: recipients || 'all'
-        });
+      // Get recipient list
+      let recipientList = [];
+      if (recipients === 'all') {
+        const teamUsers = await User.find({
+          role: { $in: ['team_member', 'team_lead'] }
+        }).select('email name');
+        recipientList = teamUsers.map(user => user.email);
+      } else {
+        recipientList = Array.isArray(recipients) ? recipients : [recipients];
       }
+
+      // Send email using nodemailer
+      const result = await nodemailerService.sendUrgentAlert({
+        subject,
+        message,
+        priority,
+        recipients: recipientList
+      });
+
+      // Log the email
+      const emailLog = await EmailLog.create({
+        type: 'urgent',
+        subject,
+        recipients: recipientList.map(email => ({
+          email,
+          status: 'sent',
+          sentAt: new Date()
+        })),
+        content: {
+          text: message,
+          html: result.html
+        },
+        priority,
+        sender: {
+          email: process.env.EMAIL_USER,
+          name: 'Project Manager'
+        },
+        metadata: {
+          messageIds: result.results.map(r => r.messageId)
+        }
+      });
 
       res.json({
         message: 'Urgent alert sent successfully',
-        results: result.results
+        recipients: recipientList.length,
+        emailLog: emailLog._id
       });
     } catch (error) {
       console.error('Error sending urgent alert:', error);
@@ -225,13 +238,13 @@ router.post('/send-metrics-reminder',
       // Try Gmail API first, fallback to SMTP
       let result;
       try {
-        result = await ProjectManagerEmailService.sendMetricsReminder({
+        result = await nodemailerService.sendMetricsReminder({
           targetDate,
           missingSubmissions
         });
       } catch (gmailError) {
         console.log('Gmail API failed, trying SMTP...', gmailError.message);
-        result = await SMTPEmailService.sendMetricsReminder({
+        result = await smtpEmailService.sendMetricsReminder({
           targetDate,
           missingSubmissions
         });
@@ -257,10 +270,10 @@ router.get('/email-analytics',
       // Try Gmail API first, fallback to SMTP
       let analytics;
       try {
-        analytics = await ProjectManagerEmailService.getEmailAnalytics();
+        analytics = await nodemailerService.getEmailAnalytics();
       } catch (gmailError) {
         console.log('Gmail analytics failed, using SMTP analytics...', gmailError.message);
-        analytics = await SMTPEmailService.getEmailAnalytics();
+        analytics = await smtpEmailService.getEmailAnalytics();
       }
       res.json(analytics);
     } catch (error) {
@@ -299,41 +312,117 @@ router.get('/team-members',
   }
 );
 
+// Get inbox emails
+router.get('/inbox',
+  authMiddleware,
+  projectManagerOnly,
+  async (req, res) => {
+    console.log('Inbox route hit with query:', req.query);
+    try {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email parameter is required' });
+      }
+
+      const messages = await EmailLog.find({
+        'recipients.email': email
+      })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+
+      res.json({ 
+        success: true,
+        messages: messages.map(msg => ({
+          _id: msg._id,
+          from: msg.sender.email,
+          fromName: msg.sender.name,
+          to: msg.recipients.map(r => r.email),
+          toNames: msg.recipients.map(r => r.name),
+          subject: msg.subject,
+          text: msg.content.text || '',
+          html: msg.content.html || '',
+          type: msg.type,
+          priority: msg.priority || 'normal',
+          status: msg.status,
+          createdAt: msg.createdAt
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching inbox:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch inbox',
+        error: error.message 
+      });
+    }
+  }
+);
+
+// Get outbox emails
+router.get('/outbox',
+  authMiddleware,
+  projectManagerOnly,
+  async (req, res) => {
+    console.log('Outbox route hit with query:', req.query);
+    try {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email parameter is required' });
+      }
+
+      const messages = await EmailLog.find({
+        'sender.email': email
+      })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+
+      res.json({ 
+        success: true,
+        messages: messages.map(msg => ({
+          _id: msg._id,
+          from: msg.sender.email,
+          fromName: msg.sender.name,
+          to: msg.recipients.map(r => r.email),
+          toNames: msg.recipients.map(r => r.name),
+          subject: msg.subject,
+          text: msg.content.text || '',
+          html: msg.content.html || '',
+          type: msg.type,
+          priority: msg.priority || 'normal',
+          status: msg.status,
+          createdAt: msg.createdAt
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching outbox:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch outbox',
+        error: error.message 
+      });
+    }
+  }
+);
+
 // Test email service connection
 router.get('/test-connection',
   authMiddleware,
   projectManagerOnly,
   async (req, res) => {
     try {
-      // Try Gmail service first, fallback to SMTP
-      let service = 'gmail';
-      let error = null;
-      
-      try {
-        await ProjectManagerEmailService.initialize();
-        console.log('✅ Gmail API service connected');
-      } catch (gmailError) {
-        console.log('❌ Gmail API failed, trying SMTP...');
-        error = gmailError.message;
-        
-        try {
-          await SMTPEmailService.initialize();
-          service = 'smtp';
-          console.log('✅ SMTP service connected');
-        } catch (smtpError) {
-          throw new Error(`Both Gmail API and SMTP failed. Gmail: ${gmailError.message}, SMTP: ${smtpError.message}`);
-        }
-      }
-      
+      await nodemailerService.initialize();
       res.json({ 
-        message: `Email service connection successful (${service.toUpperCase()})`,
+        message: 'Email service connection successful',
         status: 'connected',
-        service: service,
-        timestamp: new Date().toISOString(),
-        fallbackUsed: service === 'smtp',
-        gmailError: error
+        service: 'gmail-smtp',
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
+      console.error('Email connection test failed:', error);
       res.status(500).json({ 
         message: 'Email service connection failed',
         error: error.message,

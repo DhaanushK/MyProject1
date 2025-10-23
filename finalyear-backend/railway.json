@@ -1,0 +1,13 @@
+{
+  "name": "team-metrics-api",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "5001",
+    "FRONTEND_URL": "https://team-metrics-dashboard.vercel.app",
+    "MONGO_URI": "${{Mongo.MONGO_URI}}",
+    "JWT_SECRET": "${{Secrets.JWT_SECRET}}"
+  }
+}

@@ -21,10 +21,49 @@ function Login() {
 
       const { token, role, email: userEmail, username } = res.data;
 
+      // Validate token data
+      if (!token || !role || !userEmail) {
+        console.error('Invalid login response:', res.data);
+        throw new Error('Server returned incomplete login data');
+      }
+
+      // Decode token to verify its contents
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        
+        // Verify token contains required fields
+        if (!payload.email || !payload.role || !payload.id) {
+          console.error('Invalid token payload:', payload);
+          throw new Error('Invalid token structure');
+        }
+
+        // Verify token data matches response data
+        if (payload.email !== userEmail || payload.role !== role) {
+          console.error('Token data mismatch:', {
+            token: payload,
+            response: { email: userEmail, role }
+          });
+          throw new Error('Token data mismatch');
+        }
+      } catch (e) {
+        console.error('Token validation failed:', e);
+        throw new Error('Invalid token received from server');
+      }
+
+      // Store validated data
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("email", userEmail);
       localStorage.setItem("username", username);
+
+      // Log successful login
+      console.log('Login successful:', {
+        role,
+        email: userEmail,
+        username
+      });
 
       // Redirect by role
       if (role === "team_member") navigate("/member");

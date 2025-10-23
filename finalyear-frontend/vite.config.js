@@ -9,11 +9,22 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://e10d4591a6af.ngrok-free.app', // Your backend ngrok URL
+        target: process.env.VITE_API_URL || 'http://localhost:5001',
         changeOrigin: true,
-        secure: false,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: process.env.NODE_ENV === 'production',
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          components: ['./src/components/'],
+          utils: ['./src/utils/']
+        }
       }
     }
   }

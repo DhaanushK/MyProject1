@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
+import GmailAuth from './GmailAuth';
+import TeamLeaderMailbox from './TeamLeaderMailbox';
 
 export default function TeamLeaderEmailDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -179,6 +181,12 @@ export default function TeamLeaderEmailDashboard() {
           📊 Overview
         </button>
         <button 
+          className={activeTab === 'mailbox' ? 'active' : ''}
+          onClick={() => setActiveTab('mailbox')}
+        >
+          📬 Mailbox
+        </button>
+        <button 
           className={activeTab === 'updates' ? 'active' : ''}
           onClick={() => setActiveTab('updates')}
         >
@@ -199,6 +207,12 @@ export default function TeamLeaderEmailDashboard() {
       </div>
 
       <div className="tab-content">
+        {activeTab === 'mailbox' && (
+          <>
+            <GmailAuth />
+            <TeamLeaderMailbox />
+          </>
+        )}
         {activeTab === 'overview' && (
           <div className="overview-section">
             <div className="overview-grid">

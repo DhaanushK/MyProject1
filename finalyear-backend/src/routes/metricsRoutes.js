@@ -452,7 +452,8 @@ router.get(
       console.log('=== /metrics/all endpoint called ===');
       console.log('PM user:', req.user);
       
-      const teamData = await getAllTeamMetricsData(process.env.GOOGLE_SPREADSHEET_ID);
+      const forceRefresh = req.query.refresh === 'true';
+      const teamData = await getAllTeamMetricsData(process.env.GOOGLE_SPREADSHEET_ID, forceRefresh);
       console.log('Team data received:', typeof teamData, Object.keys(teamData || {}));
       
       // Extract data from the teamData object
