@@ -40,7 +40,7 @@ const corsOrigin = process.env.CORS_ORIGIN || 'https://my-project1-wine.vercel.a
 console.log('CORS Origin:', corsOrigin);
 
 app.use(cors({
-  origin: corsOrigin,
+  origin: ['https://my-project1-wine.vercel.app', corsOrigin],
   credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
