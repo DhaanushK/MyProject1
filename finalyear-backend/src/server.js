@@ -35,25 +35,9 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5174',
-  'https://my-project1-wine.vercel.app'
-];
-
+// CORS Configuration - Allow all origins during testing
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(null, false);
-    }
-    return callback(null, true);
-  },
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
@@ -105,8 +89,18 @@ app.use("/api/emails", emailRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api", googleAuthRoutes);
 
+// Health check endpoint
 app.get("/", (req, res) => {
   res.send("API is running...");
+});
+
+// Test endpoint
+app.get("/api/test", (req, res) => {
+  res.json({ 
+    message: "Backend is working!",
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Global error handling middleware
