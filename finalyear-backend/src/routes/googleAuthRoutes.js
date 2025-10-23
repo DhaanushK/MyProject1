@@ -36,7 +36,7 @@ const oauth2Client = new OAuth2Client({
 });
 
 // Generate OAuth2 URL
-router.get('/auth/google', (req, res) => {
+router.get('/google/signin', (req, res) => {
   const scopes = [
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.readonly',

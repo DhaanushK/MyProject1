@@ -35,9 +35,24 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration - Allow multiple dev ports
+// CORS Configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'https://my-project1-wine.vercel.app'
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
@@ -87,7 +102,7 @@ app.use("/api/tl-email", teamLeaderEmailRoutes);
 app.use("/api/tm-email", teamMemberEmailRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api", googleAuthRoutes);
+app.use("/api/auth", googleAuthRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
