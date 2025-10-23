@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import MemberDashboard from "./pages/MemberDashboard";
 import LeadDashboard from "./pages/LeadDashboard";
 import PMDashboard from "./pages/PMDashboard";
+import OAuthCallback from "./components/OAuthCallback";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/google/callback" element={<OAuthCallback />} />
           <Route path="/member/*" element={
             <ProtectedRoute role="team_member">
               <App />

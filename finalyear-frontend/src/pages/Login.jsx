@@ -1,23 +1,16 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../config/axios";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     try {
-      const res = await axios.post("/api/auth/login", {
-        email,
-        password,
-      }, {
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
+      const res = await axios.get("/api/auth/google/url");
+      if (res.data.success && res.data.authUrl) {
+        window.location.href = res.data.authUrl;
+      } else {
+        throw new Error('Invalid response from auth endpoint');
 
       const { token, role, email: userEmail, username } = res.data;
 
@@ -83,25 +76,45 @@ function Login() {
     }
   };
 
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed: ' + (error.response?.data?.message || error.message || 'An unknown error occurred'));
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br />
-      <button type="submit">Login</button>
-    </form>
+    <div className="login-container" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      padding: '20px'
+    }}>
+      <h2 style={{ marginBottom: '20px' }}>Team Metrics Dashboard</h2>
+      <button 
+        onClick={handleGoogleLogin}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 20px',
+          fontSize: '16px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <img 
+          src="https://www.google.com/favicon.ico" 
+          alt="Google"
+          style={{ width: '20px', marginRight: '10px' }}
+        />
+        Sign in with Google
+      </button>
+    </div>
   );
 }
 
