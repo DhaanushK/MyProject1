@@ -35,9 +35,12 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration with specific origins
+// CORS Configuration
+const corsOrigin = process.env.CORS_ORIGIN || 'https://my-project1-wine.vercel.app';
+console.log('CORS Origin:', corsOrigin);
+
 app.use(cors({
-  origin: ['https://my-project1-wine.vercel.app', 'https://team-metrics-dashboard-production.up.railway.app'],
+  origin: corsOrigin,
   credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
