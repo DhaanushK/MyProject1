@@ -35,14 +35,17 @@ let dbConnection;
 
 const app = express();
 
-// CORS Configuration - Allow all origins during testing
+// CORS Configuration with specific origin
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: 'https://my-project1-wine.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type']
 }));
+
+// Pre-flight requests
+app.options('*', cors());
 
 // Add security headers
 app.use((req, res, next) => {
